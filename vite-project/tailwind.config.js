@@ -20,7 +20,10 @@ export default {
         title: ['Roboto Slab', 'serif'],
         body: ['Open Sans', 'sans-serif'],
       },
+      backgroundImage: {
+        'campus-bg': "url('https://www.metropolia.fi/sites/default/files/images/Kampukset/karamalmin-kampus.jpg')", // Replace with the actual path to your image
+      },
     },
   },
   plugins: [],
-}
+};

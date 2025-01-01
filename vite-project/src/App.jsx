@@ -54,37 +54,61 @@ const App = () => {
   }, [selectedCampus, selectedFloor, selectedDate]);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex flex-col md:flex-row items-center justify-between mb-4">
-        <CampusSelector
-          selectedCampus={selectedCampus}
-          onCampusChange={(campus) => {
-            setSelectedCampus(campus);
-            setSelectedFloor('All Floors'); // Reset floor selection when campus changes
-          }}
-        />
-        <FloorSelector
-          selectedFloor={selectedFloor}
-          onFloorChange={setSelectedFloor}
-          availableFloors={campuses[selectedCampus]} // Show only floors for the selected campus
-        />
-        <div>
-          <label className="font-semibold mr-2">Select Date:</label>
-          <DatePicker
-            selected={selectedDate}
-            onChange={(date) => setSelectedDate(date)}
-            className="border rounded-md px-2 py-1"
-            dateFormat="yyyy-MM-dd"
+    <div className="bg-campus-bg bg-cover bg-center bg-fixed min-h-screen relative">
+      {/* Overlay for better readability */}
+      <div className="absolute inset-0 bg-black  bg-opacity-75"></div>
+  
+      <div className="relative p-6 max-w-6xl mx-auto ">
+        {/* Header Section */}
+        <header className="text-center mb-6">
+          <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg">
+            Karamalmi Campus reservations
+          </h1>
+          <p className="text-lg mt-2 font-body drop-shadow-lg text-white">
+            Select a campus, floor, and date to view room availability.
+          </p>
+        </header>
+  
+        {/* Filters Section */}
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8  bg-opacity-90 p-4 rounded shadow-md">
+          <CampusSelector
+            selectedCampus={selectedCampus}
+            onCampusChange={(campus) => {
+              setSelectedCampus(campus);
+              setSelectedFloor('All Floors'); // Reset floor selection when campus changes
+            }}
           />
+          <FloorSelector
+            selectedFloor={selectedFloor}
+            onFloorChange={setSelectedFloor}
+            availableFloors={campuses[selectedCampus]} // Show only floors for the selected campus
+          />
+          <div className="mt-4 md:mt-0">
+            <label className="font-body font-semibold text-white">
+              Select Date:
+            </label>
+            <DatePicker
+              selected={selectedDate}
+              onChange={(date) => setSelectedDate(date)}
+              className="border border-metropoliaGray rounded-md px-2 py-1"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
         </div>
+  
+        {/* Content Section */}
+        <main>
+          {loading ? (
+            <p className="text-center text-white font-body drop-shadow-lg">
+              Loading rooms...
+            </p>
+          ) : (
+            <RoomList rooms={rooms} />
+          )}
+        </main>
       </div>
-      {loading ? (
-        <p className="text-center text-gray-500">Loading rooms...</p>
-      ) : (
-        <RoomList rooms={rooms} />
-      )}
     </div>
   );
-};
+};  
 
 export default App;

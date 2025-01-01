@@ -26,7 +26,7 @@ const RoomList = ({ rooms }) => {
             {floorRooms.map((room) => (
               <div
                 key={room.name}
-                className="border p-4 rounded shadow-lg bg-white"
+                className="border p-4	rounded shadow-lg bg-white"
                 style={{ borderColor: room.reserved ? 'red' : 'green' }}
               >
                 <h3 className="text-lg font-bold">

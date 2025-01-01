@@ -1,6 +1,6 @@
 const FloorSelector = ({ selectedFloor, onFloorChange, availableFloors }) => (
   <div className="mb-4 text-center">
-    <label className="font-semibold mr-2">Select Floor:</label>
+    <label className="font-semibold mr-2 text-white">Select Floor:</label>
     <select
       value={selectedFloor}
       onChange={(e) => onFloorChange(e.target.value)}

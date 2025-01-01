@@ -1,6 +1,6 @@
 const CampusSelector = ({ selectedCampus, onCampusChange }) => (
     <div className="mb-4 text-center">
-      <label className="font-semibold mr-2">Select Campus:</label>
+      <label className="font-semibold mr-2 text-white">Select Campus:</label>
       <select
         value={selectedCampus}
         onChange={(e) => onCampusChange(e.target.value)}
