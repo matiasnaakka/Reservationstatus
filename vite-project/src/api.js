@@ -31,13 +31,20 @@ export const fetchRooms = async (floor, date = new Date().toISOString().split('T
       const reservation = reservations.find((res) =>
         res.resources.some((resource) => resource.code === room.name)
       );
-
+    
       return {
         ...room,
+        floor,
         reserved: !!reservation,
-        reservationDetails: reservation ? reservation.subject : null,
+        reservationDetails: reservation
+          ? {
+              subject: reservation.subject,
+              startDate: reservation.startDate,
+              endDate: reservation.endDate,
+            }
+          : null,
       };
-    });
+    });    
   } catch (error) {
     console.error('Error fetching rooms by floor:', error);
     throw error;
