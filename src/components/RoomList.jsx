@@ -5,9 +5,9 @@ const RoomList = ({ rooms }) => {
     return <p className="text-center text-gray-500">No rooms available for the selected floor.</p>;
   }
 
-  // Group rooms by floor
+  // Ryhmittele huoneet kerroksen (floor) mukaan
   const roomsByFloor = rooms.reduce((acc, room) => {
-    const floor = room.floor || 'Unknown Floor';
+    const floor = room.floor || 'Unknown Floor'; // Käytä huoneen kerrosta
     if (!acc[floor]) {
       acc[floor] = [];
     }
@@ -18,20 +18,18 @@ const RoomList = ({ rooms }) => {
   return (
     <div>
       {Object.entries(roomsByFloor).map(([floor, floorRooms]) => (
-        <div key={floor} className="mb-6">
+        <div key={floor} className="">
           <h2 className="text-xl font-bold mb-4 text-orange-500">
-            Floor {floor}
+            {floor === 'Unknown Floor' ? 'Unknown Floor' : `Floor ${floor}`}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {floorRooms.map((room) => (
               <div
                 key={room.name}
-                className="border p-4	rounded shadow-lg bg-white"
+                className="border p-4 rounded shadow-lg bg-white"
                 style={{ borderColor: room.reserved ? 'red' : 'green' }}
               >
-                <h3 className="text-lg font-bold">
-                  {room.name}
-                </h3>
+                <h3 className="text-lg font-bold">{room.name}</h3>
                 <p>(FI): {room.typeFi}</p>
                 <p>(EN): {room.typeEn}</p>
                 <p>

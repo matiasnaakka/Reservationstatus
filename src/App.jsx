@@ -1,38 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import { useSearchParams } from 'react-router-dom';
 import { fetchRooms } from './api';
-import CampusSelector from './components/CampusSelector';
-import FloorSelector from './components/FloorSelector';
 import RoomList from './components/RoomList';
+import Instructions from './components/instructions';
+import Clock from './components/Clock';
 import campuses from './campuses';
 
-// Default campus and floors
-const defaultCampus = 'Karamalmi';
-
 const App = () => {
-  const [selectedCampus, setSelectedCampus] = useState(defaultCampus);
-  const [selectedFloor, setSelectedFloor] = useState('All Floors'); // Default to "All Floors"
+  const [searchParams] = useSearchParams();
+
+  // Application state
+  const [selectedFloor, setSelectedFloor] = useState(null);
+  const [selectedCampus, setSelectedCampus] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date()); // Initialize with today's date
+  const [showStaffWorkspace, setShowStaffWorkspace] = useState(false);
 
+  // Update application state based on URL parameters
+  useEffect(() => {
+    const floor = searchParams.get('floor') || 'All Floors';
+    const campus = searchParams.get('building') || 'Karamalmi';
+    const specificDate = searchParams.get('specificdate') || new Date().toISOString().split('T')[0];
+    const staffWorkspaceParam = searchParams.get('Staffworkspace') === 'true';
+
+    setSelectedFloor(floor);
+    setSelectedCampus(campus);
+    setSelectedDate(new Date(specificDate));
+    setShowStaffWorkspace(staffWorkspaceParam);
+  }, [searchParams]);
+
+  // Fetch data logic
   const fetchData = async () => {
+    if (!selectedFloor || !selectedCampus || !selectedDate) return;
     setLoading(true);
 
     try {
       const formattedDate = selectedDate.toISOString().split('T')[0];
+      const floors = selectedFloor === 'All Floors' ? campuses[selectedCampus] : [selectedFloor];
 
-      const floors = selectedFloor === 'All Floors'
-        ? campuses[selectedCampus]
-        : [selectedFloor];
-
-      // Fetch rooms for selected floors
+      // Fetch rooms from API
       const allRooms = await Promise.all(
-        floors.map((floor) => fetchRooms(floor, formattedDate))
+        floors.map((floor) => fetchRooms(floor, formattedDate, showStaffWorkspace))
       );
 
-      setRooms(allRooms.flat()); // Flatten room data
+      setRooms(allRooms.flat());
     } catch (error) {
       console.error('Error fetching rooms:', error);
     } finally {
@@ -40,75 +52,46 @@ const App = () => {
     }
   };
 
+  // Fetch data whenever state changes
   useEffect(() => {
-    fetchData(); // Fetch data when the page loads or when campus/floor/date changes
-  }, [selectedCampus, selectedFloor, selectedDate]);
-
-  useEffect(() => {
-    // Refresh data every 2 minutes
-    const interval = setInterval(() => {
-      fetchData();
-    }, 120000);
-
-    return () => clearInterval(interval); // Cleanup interval on component unmount
-  }, [selectedCampus, selectedFloor, selectedDate]);
+    fetchData();
+  }, [selectedFloor, selectedCampus, selectedDate, showStaffWorkspace]);
 
   return (
-    <div className="bg-campus-bg bg-cover bg-center bg-fixed min-h-screen relative">
-      {/* Overlay for better readability */}
-      <div className="absolute inset-0 bg-black  bg-opacity-75"></div>
-  
-      <div className="relative p-6 max-w-6xl mx-auto ">
-        {/* Header Section */}
-        <header className="text-center mb-6">
-          <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg">
-            Karamalmi Campus reservations
-          </h1>
-          <p className="text-lg mt-2 font-body drop-shadow-lg text-white">
-            Select a campus, floor, and date to view room availability.
-          </p>
-        </header>
-  
-        {/* Filters Section */}
-        <div className="flex flex-col md:flex-row items-center justify-between mb-8  bg-opacity-90 p-4 rounded shadow-md">
-          <CampusSelector
-            selectedCampus={selectedCampus}
-            onCampusChange={(campus) => {
-              setSelectedCampus(campus);
-              setSelectedFloor('All Floors'); // Reset floor selection when campus changes
-            }}
-          />
-          <FloorSelector
-            selectedFloor={selectedFloor}
-            onFloorChange={setSelectedFloor}
-            availableFloors={campuses[selectedCampus]} // Show only floors for the selected campus
-          />
-          <div className="mt-4 md:mt-0">
-            <label className="font-body font-semibold text-white">
-              Select Date:
-            </label>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date) => setSelectedDate(date)}
-              className="border border-metropoliaGray rounded-md px-2 py-1"
-              dateFormat="yyyy-MM-dd"
-            />
-          </div>
-        </div>
-  
-        {/* Content Section */}
-        <main>
-          {loading ? (
-            <p className="text-center text-white font-body drop-shadow-lg">
-              Loading rooms...
+    <div className="bg-campus-bg bg-cover bg-center bg-fixed h-screen w-screen flex">
+      {/* Left side: Reservations */}
+      <div className="w-3/5 h-full p-4 bg-gray-100 overflow-auto">
+        <header className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg">
+              Campus Reservations
+            </h1>
+            <p className="text-lg mt-2 font-body drop-shadow-lg text-gray-800">
+              {showStaffWorkspace
+                ? 'Showing staff workspaces only.'
+                : `Showing room availability for floor ${selectedFloor} at ${selectedCampus}.`}
             </p>
+          </div>
+          <Clock />
+        </header>
+
+        <main className="h-full">
+          {loading ? (
+            <p className="text-center text-gray-800 font-body drop-shadow-lg">Loading rooms...</p>
           ) : (
             <RoomList rooms={rooms} />
           )}
         </main>
       </div>
+
+      {/* Right side: Map (placeholder for now) */}
+      <div className="w-2/5 h-full p-4 bg-gray-200 flex items-center justify-center">
+        <div className="text-xl text-gray-600">
+          Kartta näkyy tässä kohtaa tulevaisuudessa!
+        </div>
+      </div>
     </div>
   );
-};  
+};
 
 export default App;

@@ -1,19 +1,35 @@
-import axios from 'axios'; // Add this line at the top of api.js
+import axios from 'axios';
+import classrooms from './classrooms';
 
 const API_BASE_URL = 'https://tilastatusapivaan-1b10756d977e.herokuapp.com/api/reservations';
 
-import classrooms from './classrooms';
-
-export const fetchRooms = async (floor, date = new Date().toISOString().split('T')[0]) => {
+export const fetchRooms = async (floor, date = new Date().toISOString().split('T')[0], showOnlyStaffWorkspace = false) => {
   const rangeStart = `${date}T00:00:00`;
   const rangeEnd = `${date}T23:59:59`;
 
+  // Suodata vain halutut huoneet
   const floorRooms = classrooms[floor] || [];
-  const roomNames = floorRooms.map((room) => room.name);
+  const filteredRooms = floorRooms.filter((room) => {
+    if (showOnlyStaffWorkspace) {
+      return room.typeEn === 'Staff Workspace'; // Näytä vain henkilöstön työtilat
+    }
+    return true; // Näytä kaikki tilat, jos ei suodatusta
+  });
 
-  if (roomNames.length === 0) return floorRooms;
+  const roomNames = filteredRooms.map((room) => room.name);
+
+  if (roomNames.length === 0) {
+    // Lisää kerroksen tieto suoraan, vaikka ei ole varaustietoja
+    return filteredRooms.map((room) => ({
+      ...room,
+      floor,
+      reserved: false,
+      reservationDetails: null,
+    }));
+  }
 
   try {
+    // Tee yksi API-kutsu kaikille huoneille kerroksessa
     const response = await axios.post(API_BASE_URL, {
       rangeStart,
       rangeEnd,
@@ -21,14 +37,14 @@ export const fetchRooms = async (floor, date = new Date().toISOString().split('T
     });
 
     const reservations = response.data.reservations || [];
-    return floorRooms.map((room) => {
+    return filteredRooms.map((room) => {
       const reservation = reservations.find((res) =>
         res.resources.some((resource) => resource.code === room.name)
       );
 
       return {
         ...room,
-        floor,
+        floor, // Lisää kerroksen tieto
         reserved: !!reservation,
         reservationDetails: reservation
           ? {

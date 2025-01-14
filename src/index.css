@@ -1,3 +1,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom dynamic sizing */
+.dynamic-font {
+  font-size: clamp(0.8rem, 2vw, 1.5rem);
+}
+
+.dynamic-padding {
+  padding: clamp(0.5rem, 2vw, 1rem);
+}
+
+/* Existing styles */
+.h-screen {
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+}
+
+@media (orientation: portrait) {
+  .h-screen {
+    flex-direction: column;
+  }
+}
+
+.grid {
+  display: grid;
+}
+
+.grid-template-rows {
+  grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
+}
+
+.grid-template-columns {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
