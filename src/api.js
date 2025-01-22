@@ -1,62 +1,55 @@
-import axios from 'axios';
-import classrooms from './classrooms';
+import axios from "axios";
 
-const API_BASE_URL = 'https://tilastatusapivaan-1b10756d977e.herokuapp.com/api/reservations';
+const API_BASE_URL = "https://opendataapi-6c68c2d89038.herokuapp.com";
+const API_KEY = import.meta.env.VITE_API_KEY;
 
-export const fetchRooms = async (floor, date = new Date().toISOString().split('T')[0], showOnlyStaffWorkspace = false) => {
-  const rangeStart = `${date}T00:00:00`;
-  const rangeEnd = `${date}T23:59:59`;
 
-  // Suodata vain halutut huoneet
-  const floorRooms = classrooms[floor] || [];
-  const filteredRooms = floorRooms.filter((room) => {
-    if (showOnlyStaffWorkspace) {
-      return room.typeEn === 'Staff Workspace'; // Näytä vain henkilöstön työtilat
-    }
-    return true; // Näytä kaikki tilat, jos ei suodatusta
-  });
-
-  const roomNames = filteredRooms.map((room) => room.name);
-
-  if (roomNames.length === 0) {
-    // Lisää kerroksen tieto suoraan, vaikka ei ole varaustietoja
-    return filteredRooms.map((room) => ({
-      ...room,
-      floor,
-      reserved: false,
-      reservationDetails: null,
-    }));
-  }
-
+// Fetch filtered rooms with reservation data
+export const fetchFilteredRoomsWithReservations = async (floor, Staffworkspace, startDate, endDate) => {
   try {
-    // Tee yksi API-kutsu kaikille huoneille kerroksessa
-    const response = await axios.post(API_BASE_URL, {
-      rangeStart,
-      rangeEnd,
-      room: roomNames,
+    const response = await axios.get(`${API_BASE_URL}/api/rooms/reservations`, {
+      headers: { apikey: API_KEY },
+      params: { floor, Staffworkspace, startDate, endDate }, // Pass query parameters
     });
-
-    const reservations = response.data.reservations || [];
-    return filteredRooms.map((room) => {
-      const reservation = reservations.find((res) =>
-        res.resources.some((resource) => resource.code === room.name)
-      );
-
-      return {
-        ...room,
-        floor, // Lisää kerroksen tieto
-        reserved: !!reservation,
-        reservationDetails: reservation
-          ? {
-              subject: reservation.subject,
-              startDate: reservation.startDate,
-              endDate: reservation.endDate,
-            }
-          : null,
-      };
-    });
+    console.log("Filtered rooms with reservations fetched:", response.data);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching rooms by floor:', error);
+    console.error("Error fetching filtered rooms with reservations:", error);
     throw error;
+  }
+};
+
+
+// Fetch business hours
+export const fetchBusinessHours = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/businesshours`, {
+      headers: { apikey: API_KEY },
+    });
+    console.log("Business hours fetched:", response.data);
+    return response.data.campuses;
+  } catch (error) {
+    console.error("Error fetching business hours:", error);
+    throw error;
+  }
+};
+
+// Fetch reservations for a specific room
+export const fetchReservations = async (roomNumber, building, startDate, endDate) => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/reservations`, {
+      headers: { apikey: API_KEY },
+      params: {
+        room: roomNumber,
+        building,
+        startDate,
+        endDate,
+      },
+    });
+    console.log("Reservations fetched:", response.data.reservations);
+    return response.data.reservations || [];
+  } catch (error) {
+    console.error("Error fetching reservations:", error);
+    return [];
   }
 };

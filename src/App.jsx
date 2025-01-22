@@ -1,93 +1,179 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { fetchRooms } from './api';
-import RoomList from './components/RoomList';
-import Instructions from './components/instructions';
-import Clock from './components/Clock';
-import campuses from './campuses';
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { fetchBusinessHours, fetchFilteredRoomsWithReservations } from "./api";
+import RoomList from "./components/RoomList";
+import RoomMap from "./components/RoomMap";
+import Clock from "./components/Clock";
+import Instructions from "./components/instructions"; // Import the Instructions component
 
 const App = () => {
   const [searchParams] = useSearchParams();
 
-  // Application state
-  const [selectedFloor, setSelectedFloor] = useState(null);
-  const [selectedCampus, setSelectedCampus] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(null);
+  // State variables
+  const [selectedFloor, setSelectedFloor] = useState("All Floors");
+  const [selectedCampus, setSelectedCampus] = useState("Karamalmi");
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showStaffWorkspace, setShowStaffWorkspace] = useState(false);
+  const [campusStatus, setCampusStatus] = useState("Checking campus status...");
+  const [showMap, setShowMap] = useState(false); // State to toggle map visibility in mobile view
+  const [showInstructions, setShowInstructions] = useState(false); // State to toggle instructions display
 
-  // Update application state based on URL parameters
-  useEffect(() => {
-    const floor = searchParams.get('floor') || 'All Floors';
-    const campus = searchParams.get('building') || 'Karamalmi';
-    const specificDate = searchParams.get('specificdate') || new Date().toISOString().split('T')[0];
-    const staffWorkspaceParam = searchParams.get('Staffworkspace') === 'true';
+  // Read URL parameters
+  const staffOnly = searchParams.get("Staffworkspace");
+  const floor = searchParams.get("floor") || "All Floors";
+  const specificDate = searchParams.get("specificdate") || new Date().toISOString().split("T")[0];
 
-    setSelectedFloor(floor);
-    setSelectedCampus(campus);
-    setSelectedDate(new Date(specificDate));
-    setShowStaffWorkspace(staffWorkspaceParam);
-  }, [searchParams]);
-
-  // Fetch data logic
   const fetchData = async () => {
-    if (!selectedFloor || !selectedCampus || !selectedDate) return;
     setLoading(true);
-
     try {
-      const formattedDate = selectedDate.toISOString().split('T')[0];
-      const floors = selectedFloor === 'All Floors' ? campuses[selectedCampus] : [selectedFloor];
+      // Format date for API query
+      const startDate = `${specificDate}T00:00`;
+      const endDate = `${specificDate}T23:59`;
 
-      // Fetch rooms from API
-      const allRooms = await Promise.all(
-        floors.map((floor) => fetchRooms(floor, formattedDate, showStaffWorkspace))
+      // Fetch rooms with reservations
+      const roomsWithReservations = await fetchFilteredRoomsWithReservations(
+        floor,
+        staffOnly,
+        startDate,
+        endDate
       );
 
-      setRooms(allRooms.flat());
+      setRooms(roomsWithReservations);
     } catch (error) {
-      console.error('Error fetching rooms:', error);
+      console.error("Error fetching rooms with reservations:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch data whenever state changes
+  const checkCampusStatus = async () => {
+    try {
+      const campuses = await fetchBusinessHours();
+      const currentDay = new Date().toLocaleString("en-US", { weekday: "long" }).toLowerCase(); // e.g., 'monday'
+      const currentTime = new Date();
+      const currentCampus = campuses.find((campus) => campus.name === selectedCampus);
+
+      if (currentCampus) {
+        const todayHours = currentCampus.hours[currentDay];
+
+        if (todayHours.isClosed) {
+          setCampusStatus("Campus is currently closed.");
+        } else {
+          const openingTime = new Date(currentTime);
+          openingTime.setHours(todayHours.hours, todayHours.minutes, 0, 0);
+
+          const closingTime = new Date(currentTime);
+          closingTime.setHours(todayHours.closeHours, todayHours.closeMinutes, 0, 0);
+
+          if (currentTime >= openingTime && currentTime <= closingTime) {
+            setCampusStatus("Campus is currently open.");
+          } else {
+            setCampusStatus("Campus is currently closed.");
+          }
+        }
+      } else {
+        setCampusStatus("Campus hours data not found.");
+      }
+    } catch (error) {
+      console.error("Error checking campus status:", error);
+      setCampusStatus("Unable to determine campus status.");
+    }
+  };
+
   useEffect(() => {
+    checkCampusStatus();
     fetchData();
-  }, [selectedFloor, selectedCampus, selectedDate, showStaffWorkspace]);
+
+    // Set up an interval to refresh data every 1 minute
+    const interval = setInterval(() => {
+      fetchData();
+      checkCampusStatus();
+    }, 60000); // 60 seconds
+
+    // Clean up the interval on component unmount
+    return () => clearInterval(interval);
+  }, [floor, staffOnly, specificDate]);
+
+  // Determine if campus is closed
+  const isCampusClosed = campusStatus.includes("closed");
 
   return (
-    <div className="bg-campus-bg bg-cover bg-center bg-fixed h-screen w-screen flex">
+    <div className="h-screen w-screen flex bg-gray-100">
       {/* Left side: Reservations */}
-      <div className="w-3/5 h-full p-4 bg-gray-100 overflow-auto">
+      <div
+        className={`relative w-full ${showMap ? "hidden" : "block"} md:w-4/6 h-full p-4 overflow-auto`}
+      >
         <header className="flex justify-between items-center mb-6">
           <div>
+            <div className=" flex space-x-6">
             <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg">
               Campus Reservations
             </h1>
+            <button
+              className=" text-sm bg-white border px-2 py-2 rounded mb-4 shadow-md"
+              onClick={() => setShowInstructions(!showInstructions)}
+            >
+              {showInstructions ? "Hide URL Parameters" : "Url Parameters"}
+            </button>
+            </div>
             <p className="text-lg mt-2 font-body drop-shadow-lg text-gray-800">
-              {showStaffWorkspace
-                ? 'Showing staff workspaces only.'
-                : `Showing room availability for floor ${selectedFloor} at ${selectedCampus}.`}
+              Showing room availability for floor {floor} at {selectedCampus}.
             </p>
+            <p className="text-lg mt-2 font-body drop-shadow-lg text-red-600">{campusStatus}</p>
           </div>
-          <Clock />
+          <div className="hidden md:block"> {/* Hide Clock in mobile */}
+            <Clock />
+          </div>
         </header>
 
-        <main className="h-full">
-          {loading ? (
-            <p className="text-center text-gray-800 font-body drop-shadow-lg">Loading rooms...</p>
-          ) : (
-            <RoomList rooms={rooms} />
-          )}
-        </main>
+        {/* Conditionally render instructions */}
+
+        {showInstructions && <Instructions />} {/* Display instructions */}
+
+        {/* Conditionally render GIF if campus is closed */}
+        {isCampusClosed ? (
+          <div className="flex flex-col items-center justify-center mt-8">
+            <img
+              src="/closed-campus.gif" // Path to your GIF file in the public folder
+              alt="Campus is closed"
+              className="max-w-md"
+            />
+            <p className="text-lg mt-4 text-gray-800">Campus is currently closed.</p>
+          </div>
+        ) : (
+          <main className="h-full">
+            {loading ? (
+              <p className="text-center text-gray-800 font-body drop-shadow-lg">Loading rooms...</p>
+            ) : (
+              <RoomList rooms={rooms} />
+            )}
+          </main>
+        )}
+
+        {/* Show map button in mobile view */}
+        <button
+          className="block md:hidden fixed bottom-4 right-4 bg-orange-500 text-white px-4 py-2 rounded shadow-lg"
+          onClick={() => setShowMap(true)}
+        >
+          Show Map
+        </button>
       </div>
 
-      {/* Right side: Map (placeholder for now) */}
-      <div className="w-2/5 h-full p-4 bg-gray-200 flex items-center justify-center">
-        <div className="text-xl text-gray-600">
-          Kartta näkyy tässä kohtaa tulevaisuudessa!
+      {/* Right side: Room Map */}
+      <div
+        className={`absolute md:static inset-0 md:w-2/6 h-full p-4 bg-gray-200 flex flex-col items-center ${showMap ? "flex" : "hidden md:flex"
+          }`}
+      >
+        <div className="relative w-full h-full">
+          <RoomMap rooms={rooms} selectedFloor={floor} />
+          {/* Close map button in mobile view */}
+          <button
+            className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg md:hidden"
+            onClick={() => setShowMap(false)}
+          >
+            Close Map
+          </button>
         </div>
       </div>
     </div>

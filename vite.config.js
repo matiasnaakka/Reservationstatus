@@ -1,25 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import svgr from 'vite-plugin-svgr';
 
 export default defineConfig({
-  plugins: [react()],
-  base: '/Reservationstatus/', // Match the repository name
+  plugins: [
+    react(),
+    svgr({
+      svgrOptions: {
+        // SVGR options: customize here if needed
+        icon: true,
+      },
+    }),
+  ],
+  base: '/Reservationstatus/', // Set base path if deploying to GitHub Pages
 });
-
-
-// import { defineConfig } from 'vite';
-// import react from '@vitejs/plugin-react';
-
-// export default defineConfig({
-//   plugins: [react()],
-//   server: {
-//     proxy: {
-//       '/api': {
-//         target: 'https://opendata.metropolia.fi',
-//         changeOrigin: true,
-//         rewrite: (path) => path.replace(/^\/api/, ''),
-//       },
-//     },
-//   },
-// });
-
