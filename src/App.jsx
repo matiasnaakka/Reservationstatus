@@ -4,13 +4,13 @@ import { fetchBusinessHours, fetchFilteredRoomsWithReservations } from "./api";
 import RoomList from "./components/RoomList";
 import RoomMap from "./components/RoomMap";
 import Clock from "./components/Clock";
-import Instructions from "./components/instructions"; // Import the Instructions component
+import Instructions from "./components/instructions";
 
 const App = () => {
   const [searchParams] = useSearchParams();
 
   // State variables
-  const [selectedFloor, setSelectedFloor] = useState("All Floors");
+  const [selectedFloor, setSelectedFloor] = useState(""); // Initially empty
   const [selectedCampus, setSelectedCampus] = useState("Karamalmi");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [rooms, setRooms] = useState([]);
@@ -19,10 +19,22 @@ const App = () => {
   const [showMap, setShowMap] = useState(false); // State to toggle map visibility in mobile view
   const [showInstructions, setShowInstructions] = useState(false); // State to toggle instructions display
 
+  // Floors list for dropdown
+  const floors = ["2", "5", "6", "7"];
+
   // Read URL parameters
   const staffOnly = searchParams.get("Staffworkspace");
-  const floor = searchParams.get("floor") || "All Floors";
+  const floorFromURL = searchParams.get("floor") || floors[0]; // Default to the first floor (2)
   const specificDate = searchParams.get("specificdate") || new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    // Initialize floor state from URL parameters
+    if (floors.includes(floorFromURL)) {
+      setSelectedFloor(floorFromURL); // Only update if the floor is valid
+    } else {
+      setSelectedFloor(floors[0]); // Default to the first floor
+    }
+  }, [floorFromURL]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -33,7 +45,7 @@ const App = () => {
 
       // Fetch rooms with reservations
       const roomsWithReservations = await fetchFilteredRoomsWithReservations(
-        floor,
+        selectedFloor,
         staffOnly,
         startDate,
         endDate
@@ -93,7 +105,7 @@ const App = () => {
 
     // Clean up the interval on component unmount
     return () => clearInterval(interval);
-  }, [floor, staffOnly, specificDate]);
+  }, [selectedFloor, staffOnly, specificDate]);
 
   // Determine if campus is closed
   const isCampusClosed = campusStatus.includes("closed");
@@ -104,32 +116,38 @@ const App = () => {
       <div
         className={`relative w-full ${showMap ? "hidden" : "block"} md:w-4/6 h-full p-4 overflow-auto`}
       >
-        <header className="flex justify-between items-center mb-6">
-          <div>
-            <div className=" flex space-x-6">
+        <header className="flex flex-wrap items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
             <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg">
               Campus Reservations
             </h1>
             <button
-              className=" text-sm bg-white border px-2 py-2 rounded mb-4 shadow-md"
+              className="hidden md:block text-sm bg-white border px-4 py-2 rounded shadow-md"
               onClick={() => setShowInstructions(!showInstructions)}
             >
               {showInstructions ? "Hide URL Parameters" : "Url Parameters"}
             </button>
-            </div>
-            <p className="text-lg mt-2 font-body drop-shadow-lg text-gray-800">
-              Showing room availability for floor {floor} at {selectedCampus}.
-            </p>
-            <p className="text-lg mt-2 font-body drop-shadow-lg text-red-600">{campusStatus}</p>
+            {/* Dropdown for selecting floors */}
+            <select
+              value={selectedFloor}
+              onChange={(e) => setSelectedFloor(e.target.value)}
+              className="text-sm bg-white border px-4 py-2 rounded shadow-md"
+            >
+              {floors.map((floor) => (
+                <option key={floor} value={floor}>
+                  {`Floor ${floor}`}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="hidden md:block"> {/* Hide Clock in mobile */}
+          <div className="hidden md:block">
+            {/* Hide Clock in mobile */}
             <Clock />
           </div>
         </header>
 
         {/* Conditionally render instructions */}
-
-        {showInstructions && <Instructions />} {/* Display instructions */}
+        {showInstructions && <Instructions />}
 
         {/* Conditionally render GIF if campus is closed */}
         {isCampusClosed ? (
@@ -166,7 +184,7 @@ const App = () => {
           }`}
       >
         <div className="relative w-full h-full">
-          <RoomMap rooms={rooms} selectedFloor={floor} />
+          <RoomMap rooms={rooms} selectedFloor={selectedFloor} />
           {/* Close map button in mobile view */}
           <button
             className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg md:hidden"
