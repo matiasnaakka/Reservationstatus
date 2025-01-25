@@ -1,13 +1,14 @@
 import React, { useEffect } from "react";
 import InlineSVG from "react-inlinesvg";
 import Floor7SVG from "../assets/7thfloormap.svg";
+import Floor6SVG from "../assets/6thfloormap.svg";
+import Floor5SVG from "../assets/5thfloormap.svg"; // Import the 5th-floor map
 
 const RoomMap = ({ rooms, selectedFloor }) => {
   useEffect(() => {
-    if (selectedFloor === "7" && rooms) {
+    if (rooms) {
       rooms.forEach((room) => {
-        // Normalize the ID to match the SVG
-        const normalizedId = room.roomNumber; // Adjust this if the SVG IDs have a suffix like '-text'
+        const normalizedId = room.roomNumber; // Normalize the ID to match the SVG
         const roomElement = document.getElementById(normalizedId);
 
         if (roomElement) {
@@ -19,7 +20,22 @@ const RoomMap = ({ rooms, selectedFloor }) => {
     }
   }, [rooms, selectedFloor]);
 
-  if (selectedFloor !== "7") {
+  const getFloorSVG = () => {
+    switch (selectedFloor) {
+      case "5":
+        return Floor5SVG; // Return the 5th-floor SVG
+      case "6":
+        return Floor6SVG; // Return the 6th-floor SVG
+      case "7":
+        return Floor7SVG; // Return the 7th-floor SVG
+      default:
+        return null; // No map available for other floors
+    }
+  };
+
+  const floorSVG = getFloorSVG();
+
+  if (!floorSVG) {
     return <div className="text-gray-500">No map available for this floor.</div>;
   }
 
@@ -35,7 +51,7 @@ const RoomMap = ({ rooms, selectedFloor }) => {
       }}
     >
       <InlineSVG
-        src={Floor7SVG}
+        src={floorSVG}
         style={{
           width: "100%", // Scale SVG to the parent container
           height: "auto", // Maintain aspect ratio

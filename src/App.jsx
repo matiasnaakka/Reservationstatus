@@ -152,11 +152,6 @@ const App = () => {
         {/* Conditionally render GIF if campus is closed */}
         {isCampusClosed ? (
           <div className="flex flex-col items-center justify-center mt-8">
-            <img
-              src="/closed-campus.gif" // Path to your GIF file in the public folder
-              alt="Campus is closed"
-              className="max-w-md"
-            />
             <p className="text-lg mt-4 text-gray-800">Campus is currently closed.</p>
           </div>
         ) : (
