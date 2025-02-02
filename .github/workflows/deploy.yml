@@ -21,10 +21,10 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'  # ✅ More stable version
+        node-version: '20'  # ✅ Stable version
 
     - name: Clean install dependencies
-      run: npm ci  # ✅ Ensures a clean dependency install
+      run: npm ci
 
     - name: Set environment variables
       run: |
@@ -32,28 +32,25 @@ jobs:
         echo VITE_API_URL=${{ secrets.VITE_API_URL }} >> .env
 
     - name: Debug - Check .env file
-      run: cat .env  # ✅ Check if secrets are correctly set
+      run: cat .env
 
     - name: Build the React app
       run: npm run build
 
-    - name: Debug - Check build output
-      run: ls -la ./dist  # ✅ Ensures `dist` exists
-
-    - name: Fix permissions
-      run: chmod -R 755 ./dist  # ✅ Prevents permission errors
+    - name: Debug - Verify dist folder
+      run: ls -la ./dist  # ✅ Ensures `dist` exists before upload
 
     - name: Setup Pages
       uses: actions/configure-pages@v3
 
     - name: Upload artifact (GitHub Pages)
-      uses: actions/upload-pages-artifact@v3.0.1  # ✅ Explicit version
+      uses: actions/upload-pages-artifact@v3.0.1
       with:
         path: "./dist"
-        name: "github-pages"  # ✅ Ensure correct artifact name
+        name: "github-pages"
 
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v2
       with:
-        artifact_name: "github-pages"  # ✅ Ensure it matches upload name
+        artifact_name: "github-pages"  # ✅ Matches upload name
