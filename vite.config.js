@@ -7,10 +7,9 @@ export default defineConfig({
     react(),
     svgr({
       svgrOptions: {
-        // SVGR options: customize here if needed
         icon: true,
       },
     }),
   ],
-  base: '/Reservationstatus/', // Set base path if deploying to GitHub Pages
+  base: './', // ✅ Use relative paths for assets instead of absolute
 });
