@@ -16,38 +16,32 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v2
 
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v2
       with:
-        node-version: '20'  # ✅ Stable version
+        node-version: '22'
 
-    - name: Clean install dependencies
-      run: npm ci
+    - name: Install dependencies
+      run: npm install
 
     - name: Set environment variables
       run: |
         echo VITE_API_KEY=${{ secrets.VITE_API_KEY }} >> .env
         echo VITE_API_URL=${{ secrets.VITE_API_URL }} >> .env
 
-    - name: Debug - Check .env file
-      run: cat .env
-
     - name: Build the React app
       run: npm run build
-
-    - name: Debug - Verify dist folder
-      run: ls -la ./dist  # ✅ Ensures `dist` exists before upload
 
     - name: Setup Pages
       uses: actions/configure-pages@v3
 
-    - name: Upload artifact (GitHub Pages)
-      uses: actions/upload-pages-artifact@v2  # ✅ Switch back to pages-specific upload
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v2
       with:
-        path: ./dist
+        path: "./dist" # Ensure the correct build folder
 
     - name: Deploy to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v2  # ✅ Remove `artifact_name`
+      uses: actions/deploy-pages@v2
