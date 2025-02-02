@@ -21,15 +21,15 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '20'  # ✅ Stable version
 
     - name: Clean install dependencies
       run: npm ci
 
     - name: Set environment variables
       run: |
-        echo "VITE_API_KEY=${{ secrets.VITE_API_KEY }}" >> .env
-        echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+        echo VITE_API_KEY=${{ secrets.VITE_API_KEY }} >> .env
+        echo VITE_API_URL=${{ secrets.VITE_API_URL }} >> .env
 
     - name: Debug - Check .env file
       run: cat .env
@@ -38,22 +38,22 @@ jobs:
       run: npm run build
 
     - name: Debug - Verify dist folder
-      run: ls -la ./dist
+      run: ls -la ./dist  # ✅ Ensures `dist` exists before upload
 
     - name: Setup Pages
       uses: actions/configure-pages@v3
 
     - name: Upload artifact (GitHub Pages)
-      uses: actions/upload-artifact@v4  # ✅ Use `upload-artifact` instead of `upload-pages-artifact`
+      uses: actions/upload-artifact@v4  # ✅ Upgrade to v4
       with:
-        name: "github-pages"
-        path: "./dist"
-
-    - name: Debug - List uploaded artifacts
-      run: ls -la /home/runner/work/_temp/
+        name: github-pages
+        path: ./dist
+        retention-days: 1  # Keep for 1 day
+        compression-level: 6  # Default compression
+        if-no-files-found: error  # Fail if no files found
 
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v2
       with:
-        artifact_name: "github-pages"
+        artifact_name: github-pages  # ✅ Matches upload name
