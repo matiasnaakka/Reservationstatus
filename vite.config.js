@@ -11,5 +11,8 @@ export default defineConfig({
       },
     }),
   ],
-  base: './', // ✅ Use relative paths for assets instead of absolute
+  base: '/Reservationstatus/',  // ✅ Matches repo name for GitHub Pages
+  build: {
+    outDir: 'dist',  // ✅ Ensure Vite builds to `dist`
+  },
 });

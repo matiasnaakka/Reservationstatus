@@ -38,13 +38,11 @@ jobs:
       uses: actions/configure-pages@v3
 
     - name: Upload artifact (GitHub Pages)
-      uses: actions/upload-artifact@v4  # ✅ Upgraded to v4
+      uses: actions/upload-artifact@v4
       with:
         name: github-pages
-        path: ./dist
-        retention-days: 1
-        compression-level: 6
-        if-no-files-found: error
+        path: dist/**  # ✅ Upload all files inside dist
+    
 
     - name: Deploy to GitHub Pages
       id: deployment
