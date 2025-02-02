@@ -21,7 +21,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'  # ✅ Stable version
+        node-version: '20'
 
     - name: Clean install dependencies
       run: npm ci
@@ -38,19 +38,22 @@ jobs:
       run: npm run build
 
     - name: Debug - Verify dist folder
-      run: ls -la ./dist  # ✅ Ensures `dist/` exists before upload
+      run: ls -la ./dist
 
     - name: Setup Pages
       uses: actions/configure-pages@v3
 
     - name: Upload artifact (GitHub Pages)
-      uses: actions/upload-pages-artifact@v3
+      uses: actions/upload-artifact@v4  # ✅ Use `upload-artifact` instead of `upload-pages-artifact`
       with:
+        name: "github-pages"
         path: "./dist"
-        name: "github-pages"  # ✅ Make sure the artifact name matches deployment step
+
+    - name: Debug - List uploaded artifacts
+      run: ls -la /home/runner/work/_temp/
 
     - name: Deploy to GitHub Pages
       id: deployment
       uses: actions/deploy-pages@v2
       with:
-        artifact_name: "github-pages"  # ✅ Matches upload name
+        artifact_name: "github-pages"
