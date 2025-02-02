@@ -3,21 +3,23 @@ import axios from "axios";
 const API_BASE_URL = "https://opendataapi-6c68c2d89038.herokuapp.com";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
-
-// Fetch filtered rooms with reservation data
-export const fetchFilteredRoomsWithReservations = async (floor, Staffworkspace, startDate, endDate) => {
+export const fetchAllRooms = async (floor, startDate, endDate) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/rooms/reservations`, {
+    const response = await axios.get(`${API_BASE_URL}/api/rooms/freespace`, {
       headers: { apikey: API_KEY },
-      params: { floor, Staffworkspace, startDate, endDate }, // Pass query parameters
+      params: {
+        floor,
+        startDate,
+        endDate,
+      },
     });
-    console.log("Filtered rooms with reservations fetched:", response.data);
-    return response.data;
+    return response.data.rooms; // Return the room data
   } catch (error) {
-    console.error("Error fetching filtered rooms with reservations:", error);
+    console.error("Error fetching rooms:", error);
     throw error;
   }
 };
+
 
 
 // Fetch business hours
@@ -31,25 +33,5 @@ export const fetchBusinessHours = async () => {
   } catch (error) {
     console.error("Error fetching business hours:", error);
     throw error;
-  }
-};
-
-// Fetch reservations for a specific room
-export const fetchReservations = async (roomNumber, building, startDate, endDate) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/reservations`, {
-      headers: { apikey: API_KEY },
-      params: {
-        room: roomNumber,
-        building,
-        startDate,
-        endDate,
-      },
-    });
-    console.log("Reservations fetched:", response.data.reservations);
-    return response.data.reservations || [];
-  } catch (error) {
-    console.error("Error fetching reservations:", error);
-    return [];
   }
 };

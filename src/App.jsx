@@ -1,194 +1,234 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { fetchBusinessHours, fetchFilteredRoomsWithReservations } from "./api";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { fetchAllRooms } from "./api";
 import RoomList from "./components/RoomList";
 import RoomMap from "./components/RoomMap";
-import Clock from "./components/Clock";
 import Instructions from "./components/instructions";
+import { isRoomReserved } from "./components/RoomList";
+
 
 const App = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // State variables
-  const [selectedFloor, setSelectedFloor] = useState(""); // Initially empty
-  const [selectedCampus, setSelectedCampus] = useState("Karamalmi");
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // Get current date in YYYY-MM-DD format
+  const currentDate = new Date().toISOString().split("T")[0];
+
+  // Extract floor and reservable settings from URL parameters
+  const showFree = searchParams.get("showFree") === "true";
+  const floorFromURL = showFree ? "all" : searchParams.get("floor") || "2";
+  const reservableFilterFromURL = searchParams.get("reservable") === "students";
+
+  const [selectedFloor, setSelectedFloor] = useState(floorFromURL);
+  const [reservableFilter, setReservableFilter] = useState(reservableFilterFromURL);
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [campusStatus, setCampusStatus] = useState("Checking campus status...");
-  const [showMap, setShowMap] = useState(false); // State to toggle map visibility in mobile view
-  const [showInstructions, setShowInstructions] = useState(false); // State to toggle instructions display
+  const [showMap, setShowMap] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [language, setLanguage] = useState("en");
+
 
   // Floors list for dropdown
   const floors = ["2", "5", "6", "7"];
 
-  // Read URL parameters
-  const staffOnly = searchParams.get("Staffworkspace");
-  const floorFromURL = searchParams.get("floor") || floors[0]; // Default to the first floor (2)
-  const specificDate = searchParams.get("specificdate") || new Date().toISOString().split("T")[0];
+  // Translations
+  const translations = {
+    en: {
+      title: "Campus Reservations",
+      showInstructions: "Show Instructions",
+      hideInstructions: "Hide Instructions",
+      floor: "Floor",
+      loading: "Loading rooms...",
+      noRooms: "No rooms available for the selected criteria.",
+      closeMap: "Close Map",
+      filterStudents: "Show Student Reservable Rooms",
+      allRooms: "Show All Rooms",
+    },
+    fi: {
+      title: "Kampuksen varaukset",
+      showInstructions: "Näytä ohjeet",
+      hideInstructions: "Piilota ohjeet",
+      floor: "Kerros",
+      loading: "Ladataan huoneita...",
+      noRooms: "Valitulla hakuehdolla ei ole vapaita huoneita.",
+      closeMap: "Sulje kartta",
+      filterStudents: "Näytä opiskelijoiden varattavat tilat",
+      allRooms: "Näytä kaikki tilat",
+    },
+  };
 
+  // Ensure URL parameters match selected values
   useEffect(() => {
-    // Initialize floor state from URL parameters
-    if (floors.includes(floorFromURL)) {
-      setSelectedFloor(floorFromURL); // Only update if the floor is valid
+    const params = new URLSearchParams();
+
+    // If showFree is active, override the floor filter
+    if (showFree) {
+      params.set("showFree", "true");
     } else {
-      setSelectedFloor(floors[0]); // Default to the first floor
+      params.set("floor", selectedFloor);
     }
-  }, [floorFromURL]);
+
+    params.set("specificdate", currentDate); // Always use current date
+
+    if (reservableFilter) {
+      params.set("reservable", "students");
+    } else {
+      params.delete("reservable");
+    }
+
+    // Update the URL without reloading the page
+    navigate(`?${params.toString()}`, { replace: true });
+  }, [selectedFloor, reservableFilter, showFree, navigate]);
+
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Format date for API query
-      const startDate = `${specificDate}T00:00`;
-      const endDate = `${specificDate}T23:59`;
+      let allRooms = [];
 
-      // Fetch rooms with reservations
-      const roomsWithReservations = await fetchFilteredRoomsWithReservations(
-        selectedFloor,
-        staffOnly,
-        startDate,
-        endDate
-      );
+      if (showFree) {
+        // Fetch rooms from all floors
+        const floorsToFetch = ["2", "5", "6", "7"];
+        const roomPromises = floorsToFetch.map((floor) =>
+          fetchAllRooms(floor, `${currentDate}T00:00`, `${currentDate}T23:59`)
+        );
+        const results = await Promise.all(roomPromises);
+        allRooms = results.flat();
 
-      setRooms(roomsWithReservations);
+        // Filter only free rooms
+        allRooms = allRooms.filter((room) => !isRoomReserved(room));
+      } else {
+        // Fetch rooms for the selected floor
+        allRooms = await fetchAllRooms(selectedFloor, `${currentDate}T00:00`, `${currentDate}T23:59`);
+      }
+
+      // Apply filtering if "reservable=students" is set
+      if (reservableFilter) {
+        allRooms = allRooms.filter((room) => room.reservableStudents === "true");
+      }
+
+      setRooms(allRooms);
     } catch (error) {
-      console.error("Error fetching rooms with reservations:", error);
+      console.error("Error fetching rooms:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const checkCampusStatus = async () => {
-    try {
-      const campuses = await fetchBusinessHours();
-      const currentDay = new Date().toLocaleString("en-US", { weekday: "long" }).toLowerCase(); // e.g., 'monday'
-      const currentTime = new Date();
-      const currentCampus = campuses.find((campus) => campus.name === selectedCampus);
-
-      if (currentCampus) {
-        const todayHours = currentCampus.hours[currentDay];
-
-        if (todayHours.isClosed) {
-          setCampusStatus("Campus is currently closed.");
-        } else {
-          const openingTime = new Date(currentTime);
-          openingTime.setHours(todayHours.hours, todayHours.minutes, 0, 0);
-
-          const closingTime = new Date(currentTime);
-          closingTime.setHours(todayHours.closeHours, todayHours.closeMinutes, 0, 0);
-
-          if (currentTime >= openingTime && currentTime <= closingTime) {
-            setCampusStatus("Campus is currently open.");
-          } else {
-            setCampusStatus("Campus is currently closed.");
-          }
-        }
-      } else {
-        setCampusStatus("Campus hours data not found.");
-      }
-    } catch (error) {
-      console.error("Error checking campus status:", error);
-      setCampusStatus("Unable to determine campus status.");
-    }
-  };
-
+  // Automatically switch language every 30 seconds
   useEffect(() => {
-    checkCampusStatus();
-    fetchData();
+    const interval = setInterval(() => {
+      setLanguage((prevLanguage) => (prevLanguage === "en" ? "fi" : "en"));
+    }, 30000);
 
-    // Set up an interval to refresh data every 1 minute
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fetch rooms when the floor or reservable filter changes
+  useEffect(() => {
+    fetchData();
     const interval = setInterval(() => {
       fetchData();
-      checkCampusStatus();
-    }, 60000); // 60 seconds
+    }, 60000); // Refresh every 60 seconds
 
-    // Clean up the interval on component unmount
     return () => clearInterval(interval);
-  }, [selectedFloor, staffOnly, specificDate]);
-
-  // Determine if campus is closed
-  const isCampusClosed = campusStatus.includes("closed");
+  }, [selectedFloor, reservableFilter]);
 
   return (
     <div className="h-screen w-screen flex bg-gray-100">
-      {/* Left side: Reservations */}
-      <div
-        className={`relative w-full ${showMap ? "hidden" : "block"} md:w-4/6 h-full p-4 overflow-auto`}
-      >
+      {/* Left side: Reservations (Full width when floor 2 is selected) */}
+      <div className={`relative w-full ${selectedFloor === "2" ? "md:w-full" : "md:w-4/6"} h-full p-4 overflow-auto`}>
         <header className="flex flex-wrap items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg">
-              Campus Reservations
+              {translations[language].title}
             </h1>
+
+            {/* Hover Container for Show Instructions Button */}
+            <div className="relative group">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button
+                  className="hidden md:block text-sm bg-white border px-4 py-2 rounded shadow-md"
+                  onClick={() => setShowInstructions(!showInstructions)}
+                >
+                  {showInstructions
+                    ? translations[language].hideInstructions
+                    : translations[language].showInstructions}
+                </button>
+              </div>
+            </div>
+
+
+            {/* Hover Container for Floor Selector */}
+            <div className="relative group">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <select
+                  value={selectedFloor}
+                  onChange={(e) => setSelectedFloor(e.target.value)}
+                  className="text-sm bg-white border px-4 py-2 rounded shadow-md"
+                >
+                  {floors.map((floor) => (
+                    <option key={floor} value={floor}>
+                      {`${translations[language].floor} ${floor}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Hover Container for Language Toggle */}
+            <div className="relative group">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button
+                  className="text-sm bg-gray-500 text-white px-4 py-2 rounded shadow-md"
+                  onClick={() => setLanguage(language === "en" ? "fi" : "en")}
+                >
+                  {language === "en" ? "🇬🇧 English" : "🇫🇮 Suomi"}
+                </button>
+              </div>
+            </div>
+
+            {/* Toggle Student Reservable Rooms (Only in Mobile) */}
             <button
-              className="hidden md:block text-sm bg-white border px-4 py-2 rounded shadow-md"
-              onClick={() => setShowInstructions(!showInstructions)}
+              className="text-sm bg-blue-500 text-white px-4 py-2 rounded shadow-md md:hidden"
+              onClick={() => setReservableFilter(!reservableFilter)}
             >
-              {showInstructions ? "Hide URL Parameters" : "Url Parameters"}
+              {reservableFilter
+                ? translations[language].allRooms
+                : translations[language].filterStudents}
             </button>
-            {/* Dropdown for selecting floors */}
-            <select
-              value={selectedFloor}
-              onChange={(e) => setSelectedFloor(e.target.value)}
-              className="text-sm bg-white border px-4 py-2 rounded shadow-md"
-            >
-              {floors.map((floor) => (
-                <option key={floor} value={floor}>
-                  {`Floor ${floor}`}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="hidden md:block">
-            {/* Hide Clock in mobile */}
-            <Clock />
           </div>
         </header>
 
         {/* Conditionally render instructions */}
         {showInstructions && <Instructions />}
 
-        {/* Conditionally render GIF if campus is closed */}
-        {isCampusClosed ? (
-          <div className="flex flex-col items-center justify-center mt-8">
-            <p className="text-lg mt-4 text-gray-800">Campus is currently closed.</p>
+        {/* Always render RoomList */}
+        <main className="h-full">
+          {loading ? (
+            <p className="text-center text-gray-800 font-body drop-shadow-lg">
+              {translations[language].loading}
+            </p>
+          ) : (
+            <RoomList rooms={rooms} language={language} />
+          )}
+        </main>
+      </div>
+
+      {/* Right side: Room Map (Hidden when showFree=true) */}
+      {!showFree && selectedFloor !== "2" && (
+        <div className={`absolute md:static inset-0 md:w-2/6 h-full p-4 bg-gray-200 flex flex-col items-center ${showMap ? "flex" : "hidden md:flex"}`}>
+          <div className="relative w-full h-full">
+            <RoomMap rooms={rooms} selectedFloor={selectedFloor} />
+            <button
+              className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg md:hidden"
+              onClick={() => setShowMap(false)}
+            >
+              {translations[language].closeMap}
+            </button>
           </div>
-        ) : (
-          <main className="h-full">
-            {loading ? (
-              <p className="text-center text-gray-800 font-body drop-shadow-lg">Loading rooms...</p>
-            ) : (
-              <RoomList rooms={rooms} />
-            )}
-          </main>
-        )}
-
-        {/* Show map button in mobile view */}
-        <button
-          className="block md:hidden fixed bottom-4 right-4 bg-orange-500 text-white px-4 py-2 rounded shadow-lg"
-          onClick={() => setShowMap(true)}
-        >
-          Show Map
-        </button>
-      </div>
-
-      {/* Right side: Room Map */}
-      <div
-        className={`absolute md:static inset-0 md:w-2/6 h-full p-4 bg-gray-200 flex flex-col items-center ${showMap ? "flex" : "hidden md:flex"
-          }`}
-      >
-        <div className="relative w-full h-full">
-          <RoomMap rooms={rooms} selectedFloor={selectedFloor} />
-          {/* Close map button in mobile view */}
-          <button
-            className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg md:hidden"
-            onClick={() => setShowMap(false)}
-          >
-            Close Map
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

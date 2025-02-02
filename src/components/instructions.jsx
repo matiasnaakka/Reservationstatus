@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const Instructions = () => {
   return (
@@ -6,7 +6,7 @@ const Instructions = () => {
       <h2 className="text-base font-semibold text-gray-700 mb-1">How to use URL parameters:</h2>
       <ul className="list-disc pl-4 text-gray-600">
         <li>
-          <strong>specificdate</strong>: Set a specific date. 
+          <strong>specificdate</strong>: Set a specific date.
           <code className="bg-gray-200 px-1 rounded ml-1">?specificdate=2025-01-13</code>
         </li>
         <li>
@@ -18,13 +18,17 @@ const Instructions = () => {
           <code className="bg-gray-200 px-1 rounded ml-1">?building=Karamalmi</code>
         </li>
         <li>
-          <strong>Staffworkspace</strong>: Show only staff workspaces.
-          <code className="bg-gray-200 px-1 rounded ml-1">?Staffworkspace=true</code>
+          <strong>reservable</strong>: Show only student-reservable rooms.
+          <code className="bg-gray-200 px-1 rounded ml-1">?reservable=students</code>
+        </li>
+        <li>
+          <strong>showFree</strong>: Show all currently free rooms from all floors and hide the floor maps.
+          <code className="bg-gray-200 px-1 rounded ml-1">?showFree=true</code>
         </li>
         <li>
           Combine parameters:
           <code className="bg-gray-200 px-1 rounded ml-1">
-            ?specificdate=2025-01-13&floor=6&building=Karamalmi&Staffworkspace=true
+            ?specificdate=2025-01-13&floor=6&building=Karamalmi&reservable=students
           </code>
         </li>
       </ul>

@@ -2,17 +2,34 @@ import React, { useEffect } from "react";
 import InlineSVG from "react-inlinesvg";
 import Floor7SVG from "../assets/7thfloormap.svg";
 import Floor6SVG from "../assets/6thfloormap.svg";
-import Floor5SVG from "../assets/5thfloormap.svg"; // Import the 5th-floor map
+import Floor5SVG from "../assets/5thfloormap.svg";
+
+// Import the same function used in RoomList.jsx
+import { isRoomReserved } from "./RoomList";
 
 const RoomMap = ({ rooms, selectedFloor }) => {
   useEffect(() => {
-    if (rooms) {
+    if (rooms && selectedFloor) {
       rooms.forEach((room) => {
         const normalizedId = room.roomNumber; // Normalize the ID to match the SVG
         const roomElement = document.getElementById(normalizedId);
 
         if (roomElement) {
-          roomElement.style.fill = room.reserved ? "#f44336" : "#4caf50"; // Red for reserved, green for free
+          // ✅ Use the same logic as RoomList.jsx to determine if the room is reserved
+          const roomReserved = isRoomReserved(room);
+
+          // Set fill color based on reservation status
+          roomElement.style.fill = roomReserved ? "#f44336" : "#4caf50"; // Red for reserved, green for free
+
+          // Add tooltip-like information for the room
+          roomElement.setAttribute(
+            "title",
+            `Room: ${room.roomNumber}\nStatus: ${
+              roomReserved ? "Reserved" : "Available"
+            }\nFree Until: ${
+              room.freeUntil ? new Date(room.freeUntil).toLocaleTimeString() : "N/A"
+            }\nCapacity: ${room.persons || "Unknown"}`
+          );
         } else {
           console.warn(`No SVG element found for room: ${normalizedId}`);
         }
@@ -42,20 +59,21 @@ const RoomMap = ({ rooms, selectedFloor }) => {
   return (
     <div
       style={{
-        width: "100%", // Full width of the container
-        height: "100%", // Full height of the container
+        width: "100%",
+        height: "100%",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        overflow: "hidden", // Prevent overflow if the SVG is too large
+        overflow: "hidden",
+        position: "relative",
       }}
     >
       <InlineSVG
         src={floorSVG}
         style={{
-          width: "100%", // Scale SVG to the parent container
-          height: "auto", // Maintain aspect ratio
-          maxHeight: "100%", // Constrain the maximum height
+          width: "100%",
+          height: "auto",
+          maxHeight: "100%",
         }}
       />
     </div>
