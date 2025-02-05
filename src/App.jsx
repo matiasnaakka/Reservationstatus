@@ -9,6 +9,7 @@ import { isRoomReserved } from "./components/RoomList";
 
 const App = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const autoScroll = searchParams.get("autoScroll") === "true"; // ✅ Read autoScroll from URL
   const navigate = useNavigate();
 
   // Get current date in YYYY-MM-DD format
@@ -31,10 +32,20 @@ const App = () => {
   // Floors list for dropdown
   const floors = ["2", "5", "6", "7"];
 
+  // Determine audience (students or staff/teachers)
+  const reservableAudience = reservableFilter
+    ? language === "en"
+      ? "Reservable for Students"
+      : "Varattavissa opiskelijoille"
+    : language === "en"
+      ? "Reservable for Staff"
+      : "Varattavissa henkilökunnalle";
+
+
   // Translations
   const translations = {
     en: {
-      title: "Campus Reservations",
+      title: "Campus Rooms Available",
       showInstructions: "Show Instructions",
       hideInstructions: "Hide Instructions",
       floor: "Floor",
@@ -45,7 +56,7 @@ const App = () => {
       allRooms: "Show All Rooms",
     },
     fi: {
-      title: "Kampuksen varaukset",
+      title: "Kampuksen Huoneet ",
       showInstructions: "Näytä ohjeet",
       hideInstructions: "Piilota ohjeet",
       floor: "Kerros",
@@ -59,7 +70,7 @@ const App = () => {
 
   // Ensure URL parameters match selected values
   useEffect(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams); // Preserve existing params
 
     // If showFree is active, override the floor filter
     if (showFree) {
@@ -76,9 +87,17 @@ const App = () => {
       params.delete("reservable");
     }
 
+    // Ensure autoScroll stays in the URL
+    if (autoScroll) {
+      params.set("autoScroll", "true");
+    } else {
+      params.delete("autoScroll");
+    }
+
     // Update the URL without reloading the page
     navigate(`?${params.toString()}`, { replace: true });
-  }, [selectedFloor, reservableFilter, showFree, navigate]);
+}, [selectedFloor, reservableFilter, showFree, autoScroll, navigate, searchParams]);
+
 
 
   const fetchData = async () => {
@@ -137,11 +156,14 @@ const App = () => {
   return (
     <div className="h-screen w-screen flex bg-gray-100">
       {/* Left side: Reservations (Full width when floor 2 is selected) */}
-      <div className={`relative w-full ${selectedFloor === "2" ? "md:w-full" : "md:w-4/6"} h-full p-4 overflow-auto`}>
+      <div className={`relative w-full ${selectedFloor === "2" ? "md:w-full" : "md:w-5/7"} h-full p-4 overflow-auto`}>
         <header className="flex flex-wrap items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg">
+            <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg flex items-center">
               {translations[language].title}
+              <span className="ml-4 text-lg text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm">
+                {reservableAudience}
+              </span>
             </h1>
 
             {/* Hover Container for Show Instructions Button */}
@@ -210,14 +232,14 @@ const App = () => {
               {translations[language].loading}
             </p>
           ) : (
-            <RoomList rooms={rooms} language={language} />
+            <RoomList rooms={rooms} language={language} autoScroll={autoScroll} />
           )}
         </main>
       </div>
 
       {/* Right side: Room Map (Hidden when showFree=true) */}
       {!showFree && selectedFloor !== "2" && (
-        <div className={`absolute md:static inset-0 md:w-2/6 h-full p-4 bg-gray-200 flex flex-col items-center ${showMap ? "flex" : "hidden md:flex"}`}>
+        <div className={`absolute md:static inset-0 md:w-2/7 h-full p-4 bg-gray-200 flex flex-col items-center ${showMap ? "flex" : "hidden md:flex"}`}>
           <div className="relative w-full h-full">
             <RoomMap rooms={rooms} selectedFloor={selectedFloor} />
             <button

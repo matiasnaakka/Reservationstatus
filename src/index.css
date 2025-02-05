@@ -79,11 +79,6 @@
   border-radius: 4px; /* Slightly rounded corners */
 }
 
-.room-card h3 {
-  font-size: 1rem; /* Slightly larger for titles */
-  font-weight: bold;
-}
-
 .room-card .qr-code {
   margin-top: 0.5rem;
 }
