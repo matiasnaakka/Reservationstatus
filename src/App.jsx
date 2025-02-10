@@ -1,48 +1,57 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { fetchAllRooms } from "./api";
-import RoomList from "./components/RoomList";
-import RoomMap from "./components/RoomMap";
-import Instructions from "./components/instructions";
+const RoomList = lazy(() => import("./components/RoomList"));
+const RoomMap = lazy(() => import("./components/RoomMap"));
+const Instructions = lazy(() => import("./components/instructions"));
 import { isRoomReserved } from "./components/RoomList";
 
 
 const App = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const autoScroll = searchParams.get("autoScroll") === "true"; // ✅ Read autoScroll from URL
+  const loopMode = searchParams.get("loopMode") === "true"; // ✅ Read loop mode from URL
   const navigate = useNavigate();
 
-  // Get current date in YYYY-MM-DD format
-  const currentDate = new Date().toISOString().split("T")[0];
-
   // Extract floor and reservable settings from URL parameters
-  const showFree = searchParams.get("showFree") === "true";
-  const floorFromURL = showFree ? "all" : searchParams.get("floor") || "2";
-  const reservableFilterFromURL = searchParams.get("reservable") === "students";
+  const showFree = !searchParams.has("floor") || searchParams.get("showFree") === "true";
+  const reservableFilterFromURL = searchParams.get("reservable");
 
+  const reservableStudentsFilter = reservableFilterFromURL === "students";
+  const reservableStaffFilter = reservableFilterFromURL === "staff";
+  // ✅ Define floorFromURL before using it
+  const floorFromURL = searchParams.get("floor") || "all";
+
+  // ✅ Add new state for filtering by staff
+  const [reservableStudents, setReservableStudents] = useState(reservableStudentsFilter);
+  const [reservableStaff, setReservableStaff] = useState(reservableStaffFilter);
   const [selectedFloor, setSelectedFloor] = useState(floorFromURL);
   const [reservableFilter, setReservableFilter] = useState(reservableFilterFromURL);
   const [rooms, setRooms] = useState([]);
+  const [filteredRooms, setFilteredRooms] = useState([]); // ✅ Add this state
   const [loading, setLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [language, setLanguage] = useState("en");
-
+  const [showFullScreenMap, setShowFullScreenMap] = useState(loopMode);
+  const [showFeedbackScreen, setShowFeedbackScreen] = useState(false);
+  const [gifPosition, setGifPosition] = useState({ x: 50, y: 50 });
+  const [gifDirection, setGifDirection] = useState({ dx: 2, dy: 2 });
 
   // Floors list for dropdown
   const floors = ["2", "5", "6", "7"];
 
-  // Determine audience (students or staff/teachers)
-  const reservableAudience = reservableFilter
-    ? language === "en"
-      ? "Reservable for Students"
-      : "Varattavissa opiskelijoille"
-    : language === "en"
-      ? "Reservable for Staff"
-      : "Varattavissa henkilökunnalle";
+  const reservableAudience =
+    selectedFloor !== "all" && (reservableStudents || reservableStaff)
+      ? reservableStudents
+        ? language === "en"
+          ? "Reservable for Students"
+          : "Varattavissa opiskelijoille"
+        : language === "en"
+          ? "Reservable for Staff"
+          : "Varattavissa henkilökunnalle"
+      : ""; // Hide when no filters are applied
 
-
-  // Translations
   const translations = {
     en: {
       title: "Campus Rooms Available",
@@ -54,9 +63,10 @@ const App = () => {
       closeMap: "Close Map",
       filterStudents: "Show Student Reservable Rooms",
       allRooms: "Show All Rooms",
+      scanQRCode: "📲 Scan the room's QR code to reserve it in .", // ✅ New Translation
     },
     fi: {
-      title: "Kampuksen Huoneet ",
+      title: "Kampuksen Vapaat Tilat",
       showInstructions: "Näytä ohjeet",
       hideInstructions: "Piilota ohjeet",
       floor: "Kerros",
@@ -65,68 +75,66 @@ const App = () => {
       closeMap: "Sulje kartta",
       filterStudents: "Näytä opiskelijoiden varattavat tilat",
       allRooms: "Näytä kaikki tilat",
+      scanQRCode: "📲 Skannaa huoneen QR-koodi varataksesi sen Tuudossa.", // ✅ Finnish Translation
     },
   };
 
-  // Ensure URL parameters match selected values
   useEffect(() => {
-    const params = new URLSearchParams(searchParams); // Preserve existing params
+    const params = new URLSearchParams(searchParams);
 
-    // If showFree is active, override the floor filter
-    if (showFree) {
-      params.set("showFree", "true");
-    } else {
-      params.set("floor", selectedFloor);
-    }
-
-    params.set("specificdate", currentDate); // Always use current date
-
-    if (reservableFilter) {
+    if (reservableStudents) {
       params.set("reservable", "students");
+    } else if (reservableStaff) {
+      params.set("reservable", "staff");
     } else {
       params.delete("reservable");
     }
 
-    // Ensure autoScroll stays in the URL
-    if (autoScroll) {
-      params.set("autoScroll", "true");
+    if (selectedFloor !== "all") {
+      params.set("floor", selectedFloor);
     } else {
-      params.delete("autoScroll");
+      params.delete("floor"); // ✅ Remove floor if "all" is selected
     }
 
-    // Update the URL without reloading the page
     navigate(`?${params.toString()}`, { replace: true });
-}, [selectedFloor, reservableFilter, showFree, autoScroll, navigate, searchParams]);
+  }, [reservableStudents, reservableStaff, selectedFloor, navigate, searchParams]); // ✅ Added `selectedFloor`
+
 
 
 
   const fetchData = async () => {
     setLoading(true);
     try {
+      const currentDate = new Date().toISOString().split("T")[0]; // ✅ Compute inside function
+      console.log("Current date:", currentDate); // ✅ Debugging  
+
       let allRooms = [];
 
-      if (showFree) {
-        // Fetch rooms from all floors
+      if (!reservableFilter) { // ✅ No reservable filter = Fetch all free rooms
         const floorsToFetch = ["2", "5", "6", "7"];
-        const roomPromises = floorsToFetch.map((floor) =>
+        const roomPromises = floorsToFetch.map(floor =>
           fetchAllRooms(floor, `${currentDate}T00:00`, `${currentDate}T23:59`)
         );
         const results = await Promise.all(roomPromises);
         allRooms = results.flat();
-
-        // Filter only free rooms
-        allRooms = allRooms.filter((room) => !isRoomReserved(room));
       } else {
-        // Fetch rooms for the selected floor
         allRooms = await fetchAllRooms(selectedFloor, `${currentDate}T00:00`, `${currentDate}T23:59`);
       }
 
-      // Apply filtering if "reservable=students" is set
-      if (reservableFilter) {
-        allRooms = allRooms.filter((room) => room.reservableStudents === "true");
-      }
+      console.log("All rooms fetched:", allRooms);
+
+      // ✅ Update filtering to include staff-reservable rooms
+      const filteredRoomCards = allRooms.filter((room) =>
+        !isRoomReserved(room) &&
+        (
+          (!reservableStudents && !reservableStaff) || // ✅ No filter applied = show all
+          (reservableStudents && room.reservableStudents === "true") ||
+          (reservableStaff && room.reservableStaff === "true")
+        )
+      );
 
       setRooms(allRooms);
+      setFilteredRooms(filteredRoomCards);
     } catch (error) {
       console.error("Error fetching rooms:", error);
     } finally {
@@ -138,7 +146,7 @@ const App = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setLanguage((prevLanguage) => (prevLanguage === "en" ? "fi" : "en"));
-    }, 30000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, []);
@@ -153,95 +161,169 @@ const App = () => {
     return () => clearInterval(interval);
   }, [selectedFloor, reservableFilter]);
 
+  useEffect(() => {
+    if (loopMode) {
+      let counter = 0;
+      const interval = setInterval(() => {
+        counter = (counter + 1) % 3; // 🔄 Cycle through 3 states
+        if (counter === 0) {
+          setShowFullScreenMap(true);
+          setShowFeedbackScreen(false);
+        } else if (counter === 1) {
+          setShowFullScreenMap(false);
+          setShowFeedbackScreen(true);
+        } else {
+          setShowFullScreenMap(false);
+          setShowFeedbackScreen(false);
+        }
+      }, 20000); // ⏳ Switch every 20 sec
+
+      return () => clearInterval(interval);
+    }
+  }, [loopMode]);
+
   return (
     <div className="h-screen w-screen flex bg-gray-100">
-      {/* Left side: Reservations (Full width when floor 2 is selected) */}
-      <div className={`relative w-full ${selectedFloor === "2" ? "md:w-full" : "md:w-5/7"} h-full p-4 overflow-auto`}>
-        <header className="flex flex-wrap items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg flex items-center">
-              {translations[language].title}
-              <span className="ml-4 text-lg text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm">
-                {reservableAudience}
-              </span>
-            </h1>
+      {/* ✅ Fullscreen Feedback Screen Mode (Only if loopMode=true) */}
+      {loopMode && showFeedbackScreen ? (
+        <div className="absolute inset-0 font-sans flex justify-center items-center bg-white transition-opacity duration-1000">
+          {/* 📢 Centered Feedback Section */}
+          <div className="flex flex-col items-center text-center max-w-2xl px-4">
+            {/* 🖼️ Enlarged GIF at the Top */}
+            <div className="w-96 lg:w-96">
+              <img
+                src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3U2NWptcHI2ZXhxZm9wdnRsNWxkczNucTcwZDU5NGsxZzltZ253NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/R59Hhh3cnfuffSSAxP/giphy.gif"
+                alt="Animated Thumbs Up"
+                className="w-full transform transition-all duration-300 animate-bounce"
+              />
+            </div>
+            {/* 📢 Feedback Heading */}
+            <h2 className="mt-8 mb-4 font-heading text-4xl font-bold text-orange-500 transition-opacity duration-300">
+              Heräsikö päässäsi kehitysehdotuksia?
+            </h2>
+            {/* 📄 Description */}
+            <p className="mb-6 font-body text-xl text-gray-600 transition-opacity duration-300">
+              Skannaa QR-koodi kerro niistä meille.
+            </p>
+            {/* 🔹 QR Code Centered */}
+            <div className="relative">
+              <img
+                alt="Feedback Form QR Code"
+                className="h-40 w-40 rounded-lg shadow-lg transition-all"
+                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://docs.google.com/forms/d/e/1FAIpQLSdk-MbIeGFiI_sMFYiY_1QmlV_CiIUBZeovlATbKX5mNDnv_g/viewform?usp=dialog"
+              />
+            </div>
+            {/* 🏷️ Credits */}
+            <p className="mt-6 font-body text-l text-gray-500 transition-opacity duration-300">
+              Terveisin Matias
+            </p>
+          </div>
+        </div>
+      ) : loopMode && showFullScreenMap ? (
+        /* ✅ Fullscreen Map Mode (Only if loopMode=true) */
+        <div className="absolute inset-0 flex justify-center items-center bg-white transition-opacity duration-1000">
+          <div className="w-[90vw] h-[90vh] flex justify-center items-center">
+            <Suspense fallback={<p className="text-center text-gray-500">Loading map...</p>}>
+              <RoomMap rooms={rooms} selectedFloor={selectedFloor} />
+            </Suspense>
+          </div>
+        </div>
+      ) : (
+        /* ✅ Normal Mode: Show Room List & Map */
+        <div className={`relative w-full ${selectedFloor === "2" ? "md:w-full" : "md:w-5/7"} h-full p-4 overflow-auto`}>
+          <header className="flex flex-wrap items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg flex items-center">
+                {translations[language].title}
+                {reservableAudience && (
+                  <span className="ml-4 text-lg text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm">
+                    {reservableAudience}
+                  </span>
+                )}
+              </h1>
 
-            {/* Hover Container for Show Instructions Button */}
-            <div className="relative group">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {/* ✅ Hover Container for Show Instructions Button */}
+              <div className="relative group">
                 <button
-                  className="hidden md:block text-sm bg-white border px-4 py-2 rounded shadow-md"
+                  className="text-sm bg-white border px-4 py-2 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   onClick={() => setShowInstructions(!showInstructions)}
                 >
-                  {showInstructions
-                    ? translations[language].hideInstructions
-                    : translations[language].showInstructions}
+                  {showInstructions ? translations[language].hideInstructions : translations[language].showInstructions}
                 </button>
               </div>
-            </div>
 
-
-            {/* Hover Container for Floor Selector */}
-            <div className="relative group">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <select
-                  value={selectedFloor}
-                  onChange={(e) => setSelectedFloor(e.target.value)}
-                  className="text-sm bg-white border px-4 py-2 rounded shadow-md"
-                >
-                  {floors.map((floor) => (
-                    <option key={floor} value={floor}>
-                      {`${translations[language].floor} ${floor}`}
-                    </option>
-                  ))}
-                </select>
+              {/* ✅ Hover Container for Floor Selector */}
+              <div className="relative group">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <select
+                    value={selectedFloor}
+                    onChange={(e) => setSelectedFloor(e.target.value)}
+                    className="text-sm bg-white border px-4 py-2 rounded shadow-md"
+                  >
+                    {floors.map((floor) => (
+                      <option key={floor} value={floor}>
+                        {`${translations[language].floor} ${floor}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            {/* Hover Container for Language Toggle */}
-            <div className="relative group">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              {/* ✅ Hover Container for Language Toggle */}
+              <div className="relative group">
                 <button
-                  className="text-sm bg-gray-500 text-white px-4 py-2 rounded shadow-md"
+                  className="text-sm bg-gray-500 text-white px-4 py-2 rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   onClick={() => setLanguage(language === "en" ? "fi" : "en")}
                 >
                   {language === "en" ? "🇬🇧 English" : "🇫🇮 Suomi"}
                 </button>
               </div>
+
+              {/* ✅ Toggle Student Reservable Rooms (Only in Mobile) */}
+              <button
+                className="text-sm bg-blue-500 text-white px-4 py-2 rounded shadow-md md:hidden"
+                onClick={() => setReservableFilter(!reservableFilter)}
+              >
+                {reservableFilter ? translations[language].allRooms : translations[language].filterStudents}
+              </button>
             </div>
+          </header>
 
-            {/* Toggle Student Reservable Rooms (Only in Mobile) */}
-            <button
-              className="text-sm bg-blue-500 text-white px-4 py-2 rounded shadow-md md:hidden"
-              onClick={() => setReservableFilter(!reservableFilter)}
-            >
-              {reservableFilter
-                ? translations[language].allRooms
-                : translations[language].filterStudents}
-            </button>
-          </div>
-        </header>
-
-        {/* Conditionally render instructions */}
-        {showInstructions && <Instructions />}
-
-        {/* Always render RoomList */}
-        <main className="h-full">
-          {loading ? (
-            <p className="text-center text-gray-800 font-body drop-shadow-lg">
-              {translations[language].loading}
-            </p>
-          ) : (
-            <RoomList rooms={rooms} language={language} autoScroll={autoScroll} />
+          {/* ✅ Conditionally render Instructions with Lazy Loading */}
+          {showInstructions && (
+            <Suspense fallback={<p className="text-center text-gray-500">Loading instructions...</p>}>
+              <Instructions />
+            </Suspense>
           )}
-        </main>
-      </div>
 
-      {/* Right side: Room Map (Hidden when showFree=true) */}
-      {!showFree && selectedFloor !== "2" && (
+          {/* ✅ Always render RoomList with Lazy Loading */}
+          <main className="h-full">
+            {loading ? (
+              <p className="text-center text-gray-800 font-body drop-shadow-lg">
+                {translations[language].loading}
+              </p>
+            ) : (
+              <Suspense fallback={<p className="text-center text-gray-500">Loading rooms...</p>}>
+                <RoomList
+                  rooms={filteredRooms}
+                  language={language}
+                  autoScroll={autoScroll}
+                  reservableStudents={reservableStudents}
+                  reservableStaff={reservableStaff}
+                />
+              </Suspense>
+            )}
+          </main>
+        </div>
+      )}
+
+      {/* ✅ Map Display (Normal Mode) */}
+      {!showFree && selectedFloor && !loopMode && (
         <div className={`absolute md:static inset-0 md:w-2/7 h-full p-4 bg-gray-200 flex flex-col items-center ${showMap ? "flex" : "hidden md:flex"}`}>
           <div className="relative w-full h-full">
-            <RoomMap rooms={rooms} selectedFloor={selectedFloor} />
+            <Suspense fallback={<p className="text-center text-gray-500">Loading map...</p>}>
+              <RoomMap rooms={rooms} selectedFloor={selectedFloor} reservableFilter={reservableFilter} />
+            </Suspense>
             <button
               className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded shadow-lg md:hidden"
               onClick={() => setShowMap(false)}

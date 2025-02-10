@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        '2xl': '1536px', // ✅ Ensure 2xl breakpoint is defined
+      },
       colors: {
         metropoliaOrange: '#ff5000',
         metropoliaGray: '#53565a',
@@ -21,7 +24,7 @@ export default {
         body: ['Open Sans', 'sans-serif'],
       },
       backgroundImage: {
-        'campus-bg': "url('https://www.metropolia.fi/sites/default/files/images/Kampukset/karamalmin-kampus.jpg')", // Replace with the actual path to your image
+        'campus-bg': "url('https://www.metropolia.fi/sites/default/files/images/Kampukset/karamalmin-kampus.jpg')", // ✅ Background image
       },
     },
   },

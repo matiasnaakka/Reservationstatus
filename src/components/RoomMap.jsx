@@ -1,52 +1,82 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import InlineSVG from "react-inlinesvg";
 import Floor7SVG from "../assets/7thfloormap.svg";
 import Floor6SVG from "../assets/6thfloormap.svg";
 import Floor5SVG from "../assets/5thfloormap.svg";
-
-// Import the same function used in RoomList.jsx
 import { isRoomReserved } from "./RoomList";
 
-const RoomMap = ({ rooms, selectedFloor }) => {
-  useEffect(() => {
-    if (rooms && selectedFloor) {
-      rooms.forEach((room) => {
-        const normalizedId = room.roomNumber; // Normalize the ID to match the SVG
-        const roomElement = document.getElementById(normalizedId);
+const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
+  const svgRef = useRef(null);
+  const [svgLoaded, setSvgLoaded] = useState(false);
 
+  // ✅ Function to update room colors
+  const updateRoomColors = () => {
+    if (!svgRef.current || !svgLoaded) return;
+
+    console.log("✅ SVG is loaded, updating room colors...");
+
+    // ✅ Rooms that should always be yellow (5th floor)
+    const alwaysYellowRooms = ["KMC550", "KMC590"];
+
+    const filterByStaff = reservableFilter === "staff";
+    const filterByStudents = reservableFilter === "students";
+
+    // 🔹 Loop through API rooms and apply colors
+    rooms.forEach((room) => {
+      const normalizedId = room.roomNumber.replace(/\./g, "\\.");
+      const roomElement = svgRef.current.querySelector(`#${normalizedId}`);
+
+      if (roomElement) {
+        console.log(`✅ Found room in SVG: ${room.roomNumber}`, roomElement);
+
+        let roomColor = "#4caf50"; // Default: Green (Free)
+
+        if (room.reserved) {
+          roomColor = "#f44336"; // 🔴 Reserved (Red)
+        } else if (filterByStaff) {
+          roomColor = room.reserved ? "#f44336" : "#4caf50";
+        } else if (filterByStudents) {
+          roomColor = room.reservableStudents === "true" ? "#4caf50" : "#ffeb3b";
+        }
+
+        // ✅ Apply color
+        roomElement.setAttribute("fill", roomColor);
+      } else {
+        console.warn(`🚨 No SVG element found for room: ${room.roomNumber}`);
+      }
+    });
+
+    // 🟡 **Manually Color Missing Rooms (5th Floor)**
+    if (selectedFloor === "5") {
+      alwaysYellowRooms.forEach((roomId) => {
+        const roomElement = svgRef.current.querySelector(`#${roomId}`);
         if (roomElement) {
-          // ✅ Use the same logic as RoomList.jsx to determine if the room is reserved
-          const roomReserved = isRoomReserved(room);
-
-          // Set fill color based on reservation status
-          roomElement.style.fill = roomReserved ? "#f44336" : "#4caf50"; // Red for reserved, green for free
-
-          // Add tooltip-like information for the room
-          roomElement.setAttribute(
-            "title",
-            `Room: ${room.roomNumber}\nStatus: ${
-              roomReserved ? "Reserved" : "Available"
-            }\nFree Until: ${
-              room.freeUntil ? new Date(room.freeUntil).toLocaleTimeString() : "N/A"
-            }\nCapacity: ${room.persons || "Unknown"}`
-          );
+          console.log(`✅ Forcing yellow for: ${roomId}`);
+          roomElement.setAttribute("fill", "#ffeb3b"); // 🟡 Yellow
         } else {
-          console.warn(`No SVG element found for room: ${normalizedId}`);
+          console.warn(`🚨 No SVG element found for: ${roomId} in the SVG!`);
         }
       });
     }
-  }, [rooms, selectedFloor]);
+  };
 
+  useEffect(() => {
+    if (svgLoaded) {
+      setTimeout(updateRoomColors, 500); // ✅ Ensure SVG is fully loaded before modifying
+    }
+  }, [rooms, selectedFloor, svgLoaded, reservableFilter]); // ✅ Added reservableFilter  
+
+  // ✅ Function to get the correct floor SVG
   const getFloorSVG = () => {
     switch (selectedFloor) {
       case "5":
-        return Floor5SVG; // Return the 5th-floor SVG
+        return Floor5SVG;
       case "6":
-        return Floor6SVG; // Return the 6th-floor SVG
+        return Floor6SVG;
       case "7":
-        return Floor7SVG; // Return the 7th-floor SVG
+        return Floor7SVG;
       default:
-        return null; // No map available for other floors
+        return null;
     }
   };
 
@@ -70,6 +100,11 @@ const RoomMap = ({ rooms, selectedFloor }) => {
     >
       <InlineSVG
         src={floorSVG}
+        onLoad={() => {
+          console.log("✅ SVG Loaded");
+          setSvgLoaded(true);
+        }}
+        innerRef={svgRef} // ✅ Store reference for DOM access
         style={{
           width: "100%",
           height: "auto",
