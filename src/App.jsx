@@ -35,7 +35,6 @@ const App = () => {
   const [language, setLanguage] = useState("en");
   const [showFullScreenMap, setShowFullScreenMap] = useState(loopMode);
   const [showFeedbackScreen, setShowFeedbackScreen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(20); // Timer countdown (seconds)
   const [nextScreen, setNextScreen] = useState("Feedback Screen"); // Text for what's next
 
 
@@ -170,50 +169,52 @@ const App = () => {
     return () => clearInterval(interval);
   }, [selectedFloor, reservableFilter]);
 
-  useEffect(() => {
-    if (loopMode) {
-      let counter = 0;
-      setTimeLeft(20); // Start with Room List & Map for 5s
-      setNextScreen(translations[language].fullMap);
-
-      const interval = setInterval(() => {
-        counter = (counter + 1) % 3; // 🔄 Cycle through 3 states correctly
-
-        if (counter === 0) {
-          // ✅ Show Room List & Map for 5s
-          setShowFullScreenMap(false);
-          setShowFeedbackScreen(false);
-          setTimeLeft(5);
-          setNextScreen(translations[language].fullMap);
-        } else if (counter === 1) {
-          // ✅ Show Full Map for 5s
-          setShowFullScreenMap(true);
-          setShowFeedbackScreen(false);
-          setTimeLeft(5);
-          setNextScreen(translations[language].feedbackScreen);
-        } else if (counter === 2) {
-          // ✅ Show Feedback Screen for 5s
-          setShowFullScreenMap(false); // 🔹 Ensure Full Screen Map is disabled
-          setShowFeedbackScreen(true);
-          setTimeLeft(5);
-          setNextScreen(translations[language].roomListMap);
-        }
-      }, 5000); // 🔹 Correct cycle time (5s per state)
-
-      return () => clearInterval(interval);
-    }
-  }, [loopMode, language]); // 🔹 Ensure it updates when language changes  
+  const loopRoomTime = parseInt(searchParams.get("loopRoom")) || 15; // Default 5s
+  const loopMapTime = parseInt(searchParams.get("loopMap")) || 15; // Default 5s
+  const loopFeedbackTime = parseInt(searchParams.get("loopFeedback")) || 15; // Default 5s
+  const [currentScreen, setCurrentScreen] = useState("roomList"); // First screen
+  const [timeLeft, setTimeLeft] = useState(loopRoomTime);
 
   useEffect(() => {
-    if (loopMode) {
-      const countdown = setInterval(() => {
-        setTimeLeft((prev) => (prev > 0 ? prev - 1 : prev));
-      }, 1000);
+    if (!loopMode) return;
 
-      return () => clearInterval(countdown);
-    }
-  }, [loopMode, timeLeft]);
+    const screens = [
+      { screen: "roomList", duration: loopRoomTime, next: "fullMap" },
+      { screen: "fullMap", duration: loopMapTime, next: "feedbackScreen" },
+      { screen: "feedbackScreen", duration: loopFeedbackTime, next: "roomList" },
+    ];
 
+    let currentIndex = screens.findIndex((s) => s.screen === currentScreen);
+    if (currentIndex === -1) currentIndex = 0;
+
+    const switchScreen = () => {
+      const { screen, duration, next } = screens[currentIndex];
+
+      setCurrentScreen(screen);
+      setTimeLeft(duration); // Reset countdown timer for each screen
+      setNextScreen(translations[language][next]);
+
+      setShowFullScreenMap(screen === "fullMap");
+      setShowFeedbackScreen(screen === "feedbackScreen");
+
+      currentIndex = (currentIndex + 1) % screens.length;
+    };
+
+    switchScreen(); // Start loop
+    const intervalId = setInterval(switchScreen, screens[currentIndex].duration * 1000);
+
+    return () => clearInterval(intervalId); // Cleanup when unmounting
+  }, [loopMode, language, currentScreen, loopRoomTime, loopMapTime, loopFeedbackTime]);
+
+  useEffect(() => {
+    if (!loopMode) return;
+  
+    const countdown = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : prev));
+    }, 1000);
+  
+    return () => clearInterval(countdown);
+  }, [loopMode, currentScreen]); // Reset when screen changes  
 
   return (
 
