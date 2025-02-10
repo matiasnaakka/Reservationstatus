@@ -35,8 +35,9 @@ const App = () => {
   const [language, setLanguage] = useState("en");
   const [showFullScreenMap, setShowFullScreenMap] = useState(loopMode);
   const [showFeedbackScreen, setShowFeedbackScreen] = useState(false);
-  const [gifPosition, setGifPosition] = useState({ x: 50, y: 50 });
-  const [gifDirection, setGifDirection] = useState({ dx: 2, dy: 2 });
+  const [timeLeft, setTimeLeft] = useState(20); // Timer countdown (seconds)
+  const [nextScreen, setNextScreen] = useState("Feedback Screen"); // Text for what's next
+
 
   // Floors list for dropdown
   const floors = ["2", "5", "6", "7"];
@@ -63,7 +64,12 @@ const App = () => {
       closeMap: "Close Map",
       filterStudents: "Show Student Reservable Rooms",
       allRooms: "Show All Rooms",
-      scanQRCode: "📲 Scan the room's QR code to reserve it in .", // ✅ New Translation
+      scanQRCode: "📲 Scan the room's QR code to reserve it.",
+      nextScreen: "Coming next:",
+      timeLeft: "",
+      roomListMap: "Room List & Map",
+      feedbackScreen: "Feedback Screen",
+      fullMap: "Full Map",
     },
     fi: {
       title: "Kampuksen Vapaat Tilat",
@@ -75,9 +81,15 @@ const App = () => {
       closeMap: "Sulje kartta",
       filterStudents: "Näytä opiskelijoiden varattavat tilat",
       allRooms: "Näytä kaikki tilat",
-      scanQRCode: "📲 Skannaa huoneen QR-koodi varataksesi sen Tuudossa.", // ✅ Finnish Translation
+      scanQRCode: "📲 Skannaa huoneen QR-koodi varataksesi sen.",
+      nextScreen: "Seuraavaksi:",
+      timeLeft: "",
+      roomListMap: "Huonelista & Kartta",
+      feedbackScreen: "Palaute-näyttö",
+      fullMap: "Koko näytön kartta",
     },
   };
+
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
@@ -98,9 +110,6 @@ const App = () => {
 
     navigate(`?${params.toString()}`, { replace: true });
   }, [reservableStudents, reservableStaff, selectedFloor, navigate, searchParams]); // ✅ Added `selectedFloor`
-
-
-
 
   const fetchData = async () => {
     setLoading(true);
@@ -164,26 +173,67 @@ const App = () => {
   useEffect(() => {
     if (loopMode) {
       let counter = 0;
+      setTimeLeft(20); // Start with Room List & Map for 5s
+      setNextScreen(translations[language].fullMap);
+
       const interval = setInterval(() => {
-        counter = (counter + 1) % 3; // 🔄 Cycle through 3 states
+        counter = (counter + 1) % 3; // 🔄 Cycle through 3 states correctly
+
         if (counter === 0) {
+          // ✅ Show Room List & Map for 5s
+          setShowFullScreenMap(false);
+          setShowFeedbackScreen(false);
+          setTimeLeft(5);
+          setNextScreen(translations[language].fullMap);
+        } else if (counter === 1) {
+          // ✅ Show Full Map for 5s
           setShowFullScreenMap(true);
           setShowFeedbackScreen(false);
-        } else if (counter === 1) {
-          setShowFullScreenMap(false);
+          setTimeLeft(5);
+          setNextScreen(translations[language].feedbackScreen);
+        } else if (counter === 2) {
+          // ✅ Show Feedback Screen for 5s
+          setShowFullScreenMap(false); // 🔹 Ensure Full Screen Map is disabled
           setShowFeedbackScreen(true);
-        } else {
-          setShowFullScreenMap(false);
-          setShowFeedbackScreen(false);
+          setTimeLeft(5);
+          setNextScreen(translations[language].roomListMap);
         }
-      }, 20000); // ⏳ Switch every 20 sec
+      }, 5000); // 🔹 Correct cycle time (5s per state)
 
       return () => clearInterval(interval);
     }
-  }, [loopMode]);
+  }, [loopMode, language]); // 🔹 Ensure it updates when language changes  
+
+  useEffect(() => {
+    if (loopMode) {
+      const countdown = setInterval(() => {
+        setTimeLeft((prev) => (prev > 0 ? prev - 1 : prev));
+      }, 1000);
+
+      return () => clearInterval(countdown);
+    }
+  }, [loopMode, timeLeft]);
+
 
   return (
+
     <div className="h-screen w-screen flex bg-gray-100">
+      {/* ✅ Countdown Banner (Only if loopMode is active) */}
+      {loopMode && (
+        <div className="absolute top-2 right-2 bg-black bg-opacity-80 text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all duration-500 ease-in-out transform z-[9999] flex items-center space-x-3">
+          {/* Text on the left */}
+          <div className="text-right">
+            <p className="text-sm opacity-80 tracking-wide">{translations[language].nextScreen}</p>
+            <p className="text-lg font-extrabold tracking-widest">{nextScreen}</p>
+          </div>
+          {/* Timer Ball on the right (Jumping) */}
+          <div className="w-12 h-12 flex items-center justify-center bg-white text-black rounded-full font-extrabold text-xl shadow-md animate-bounce">
+            {timeLeft}
+          </div>
+        </div>
+      )}
+
+
       {/* ✅ Fullscreen Feedback Screen Mode (Only if loopMode=true) */}
       {loopMode && showFeedbackScreen ? (
         <div className="absolute inset-0 font-sans flex justify-center items-center bg-white transition-opacity duration-1000">
@@ -214,7 +264,7 @@ const App = () => {
               />
             </div>
             {/* 🏷️ Credits */}
-            <p className="mt-6 font-body text-l text-gray-500 transition-opacity duration-300">
+            <p className="mt-6 font-body text-xl text-gray-500 transition-opacity duration-300">
               Terveisin Matias
             </p>
           </div>
