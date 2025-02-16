@@ -2,20 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom dynamic sizing */
-.dynamic-font {
-  font-size: clamp(0.8rem, 2vw, 1.5rem);
+html, body, #root {
+  height: 100vh;
+  overflow: hidden;
 }
 
 .dynamic-padding {
   padding: clamp(0.5rem, 2vw, 1rem);
-}
-
-/* Existing styles */
-.h-screen {
-  height: 100vh;
-  display: flex;
-  flex-direction: row;
 }
 
 @media (orientation: portrait) {
@@ -36,27 +29,6 @@
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
-.map-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  padding: 10px;
-  box-sizing: border-box; /* Include padding in width/height calculation */
-  overflow: hidden; /* Prevent any overflow */
-}
-
-
-.map-svg {
-  width: auto; /* Scale based on height */
-  height: auto; /* Maintain aspect ratio */
-  max-height: 20%; /* Constrain height to 90% of the parent container */
-  max-width: 20%; /* Constrain width to 90% of the parent container */
-  object-fit: contain; /* Maintain aspect ratio and fit within the container */
-  border: 1px solid #ccc; /* Optional: Add a border for clarity */
-}
-
 .qr-code {
   display: flex;
   flex-direction: column;
@@ -65,10 +37,10 @@
 }
 
 .qr-code canvas {
-  border: 1px solid #ddd;
+  border: 100px solid #ddd;
   border-radius: 8px;
+  background-color: yellow;
 }
-
 
 *******
 

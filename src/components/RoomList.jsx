@@ -5,10 +5,9 @@ import {
   faUsers,
   faBuilding,
   faRulerCombined,
-  faCheckCircle,
-  faTimesCircle,
   faClock,
-  faUserGraduate, faUserTie
+  faUserTie,      // ✅ Add this for "Henkilökunta"
+  faUserGraduate  // ✅ Add this for "Opiskelijat"
 } from "@fortawesome/free-solid-svg-icons";
 
 import roomImages from "../roomImages"; // ✅ Import room images
@@ -39,16 +38,30 @@ const generateTuudoLink = (roomNumber) => {
 
 // Function to check if the room is currently reserved
 export const isRoomReserved = (room) => {
-  const now = new Date();
-  const currentReservationStart = room.currentReservation
-    ? new Date(room.currentReservation.startDate)
-    : null;
-  const currentReservationEnd = room.currentReservation
-    ? new Date(room.currentReservation.endDate)
-    : null;
+  const now = new Date(); // 🔥 Hanki nykyhetki
 
-  return currentReservationStart && now >= currentReservationStart && now < currentReservationEnd;
+  // Tarkista, onko nykyinen varaus voimassa
+  if (room.currentReservation) {
+    const currentStart = new Date(room.currentReservation.startDate);
+    const currentEnd = new Date(room.currentReservation.endDate);
+    if (now >= currentStart && now < currentEnd) {
+      return true;
+    }
+  }
+
+  // Tarkista, onko seuraava varaus alkanut, mutta sitä ei ole siirretty currentReservationiin
+  if (room.nextReservation) {
+    const nextStart = new Date(room.nextReservation.startDate);
+    const nextEnd = new Date(room.nextReservation.endDate);
+
+    if (now >= nextStart && now < nextEnd) {
+      return true; // 🛑 Tämä varaus on jo alkanut
+    }
+  }
+
+  return false; // ✅ Huone on vapaa
 };
+
 
 // Function to check if the room has a reservation later today
 const hasReservationToday = (room) => {
@@ -59,29 +72,62 @@ const hasReservationToday = (room) => {
   return nextReservationTime.getDate() === now.getDate();
 };
 
-const useAutoScroll = (ref, enabled, speed = 40) => {
+const useAutoScroll = (ref, enabled, speed = 50) => {
   useEffect(() => {
-    if (!enabled) return; // ✅ Disable auto-scroll if 'enabled' is false
+    if (!enabled) {
+      console.log("🛑 AutoScroll disabled");
+      return; // ✅ Stop if autoScroll=false
+    }
 
     const element = ref.current;
-    if (!element) return;
+    if (!element) {
+      console.warn("🚨 No element to scroll!");
+      return;
+    }
 
-    const scroll = () => {
-      if (element.scrollTop + element.clientHeight >= element.scrollHeight) {
-        element.scrollTop = 0; // Reset to top
-      } else {
-        element.scrollTop += 1; // Scroll down gradually
+    console.log("✅ AutoScroll started");
+
+    let animationFrameId;
+    let lastTime = 0;
+    const scrollStep = 1;
+
+    const smoothScroll = (time) => {
+      if (!enabled || !element) return; // ✅ Stop if disabled
+
+      if (time - lastTime > speed) {
+        if (element.scrollTop + element.clientHeight >= element.scrollHeight) {
+          console.log("🔄 Reset scrolling to top");
+          element.scrollTop = 0;
+        } else {
+          element.scrollTop += scrollStep;
+        }
+        lastTime = time;
       }
+
+      animationFrameId = requestAnimationFrame(smoothScroll);
     };
 
-    const interval = setInterval(scroll, speed);
-    return () => clearInterval(interval);
-  }, [ref, enabled, speed]); // ✅ Add 'enabled' to dependencies
+    animationFrameId = requestAnimationFrame(smoothScroll);
+
+    return () => {
+      console.log("⏹️ AutoScroll stopped");
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [ref, enabled, speed]);
 };
 
-const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff }) => {
+import { format, parseISO } from "date-fns";
+import { fi } from "date-fns/locale"; // 🇫🇮 Suomen kielinen muotoilu
+
+// Helper function to format closing time
+const formatClosingTime = (closingTime) => {
+  if (!closingTime) return "Unknown";
+  return format(parseISO(closingTime), "HH:mm", { locale: fi });
+};
+
+const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff, showMap }) => {
   const scrollRef = useRef(null);
-  useAutoScroll(scrollRef, autoScroll, 35); // ✅ AutoScroll now works correctly
+  useAutoScroll(scrollRef, autoScroll, 30); // ✅ AutoScroll now works correctly
 
   const filteredRooms = rooms.filter((room) =>
     !isRoomReserved(room) &&
@@ -104,79 +150,92 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
   }
 
   return (
-<div
-  ref={scrollRef}
-  className="overflow-y-auto h-[100vh] w-full"
-  style={{ scrollBehavior: "smooth" }}
->
-  {/* 🟢 Responsive Grid for Room Cards */}
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
-    {filteredRooms.map((room) => {
-      const roomReserved = isRoomReserved(room);
-      const formattedRoomNumber = room.roomNumber.replace(/\./g, "_");
-      const roomImage = roomImages[formattedRoomNumber];
+    <div ref={scrollRef} className="overflow-auto h-full w-full" style={{ scrollBehavior: "smooth", maxHeight: "90vh" }}>
 
-      return (
-        <div
-          key={room.roomNumber}
-          className="relative border rounded-lg dynamic-padding shadow-md flex justify-between room-card"
-        >
-          {/* 📌 Left Side - Room Details */}
-          <div className="flex-1 pr-4">
-            <h3 className="text-xl font-bold text-orange-600 flex items-center mb-2">
-              <FontAwesomeIcon icon={faBuilding} className="mr-2" />
-              {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
-            </h3>
+      {/* 🟢 Responsive Grid for Room Cards */}
+      <div
+        className={`grid gap-4 ${showMap
+            ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+            : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+          }`}
+      >
+        {filteredRooms.map((room) => {
+          const roomReserved = isRoomReserved(room);
+          const formattedRoomNumber = room.roomNumber.replace(/\./g, "_");
+          const roomImage = roomImages[formattedRoomNumber];
 
-            <p className="flex items-center">
-              <FontAwesomeIcon icon={faBuilding} className="mr-2 text-gray-500" />
-              {language === "fi" ? "Kerros" : "Floor"} {room.floor} | {room.wing || (language === "fi" ? "Tuntematon siipi" : "Unknown Wing")}
-            </p>
+          return (
+            <div
+              key={room.roomNumber}
+              className="relative border rounded-lg dynamic-padding shadow-md flex flex-col sm:flex-row bg-white p-4 w-full max-w-md room-card"
+            >
+              {/* 📌 Left Side - Room Details */}
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-orange-600">
+                  {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
+                </h3>
 
-            <p className="flex items-center">
-              <FontAwesomeIcon icon={faUsers} className="mr-2 text-gray-500" />
-              {room.persons || "Tuntematon"} {language === "fi" ? "henkilöä" : "persons"}
-            </p>
+                <p className="text-gray-600 font-semibold underline">{translateDetails(room.details, language)}</p>
 
-            <p className="flex items-center">
-              <FontAwesomeIcon icon={faRulerCombined} className="mr-2 text-gray-500" />
-              {room.squareMeters || "0"} m²
-            </p>
+                <p className="flex items-center text-sm text-gray-700">
+                  <FontAwesomeIcon icon={faBuilding} className="mr-2 text-gray-500" />
+                  {language === "fi" ? "Kerros" : "Floor"} {room.floor} | {room.wing || "?"}
+                </p>
 
-            <p className="text-gray-600">{translateDetails(room.details, language)}</p>
+                <p className="flex items-center text-sm text-gray-700">
+                  <FontAwesomeIcon icon={faUsers} className="mr-2 text-gray-500" />
+                  {room.persons || "?"} {language === "fi" ? "henkilöä" : "persons"}
+                </p>
 
-            {!roomReserved && (
-              <p className="flex items-center text-green-600 font-bold mt-6 underline">
-                <FontAwesomeIcon icon={faClock} className="mr-2" />
-                {room.nextReservation
-                  ? language === "fi"
-                    ? `Vapaa klo ${new Date(room.nextReservation.startDate).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })} asti`
-                    : `Available until ${new Date(room.nextReservation.startDate).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}`
-                  : language === "fi"
-                    ? "Vapaana koko päivän"
-                    : "Available all day"}
-              </p>
-            )}
-          </div>
+                <p className="flex items-center text-sm text-gray-700">
+                  <FontAwesomeIcon icon={faRulerCombined} className="mr-2 text-gray-500" />
+                  {room.squareMeters || "0"} m²
+                </p>
 
-          {/* 🖼️ Right Side - Image & QR Code */}
-          <div className="flex flex-col items-center space-y-4">
-            {roomImage && (
-              <img src={roomImage} alt={`Room ${room.roomNumber}`} className="w-40 h-32 object-cover rounded-md" />
-            )}
-            <QRCodeSVG value={generateTuudoLink(room.roomNumber)} size={100} />
-          </div>
-        </div>
-      );
-    })}
-  </div>
-</div>
+                {!roomReserved && (
+                  <p className={`flex items-center font-bold mt-2 ${room.nextReservation ? "text-orange-500" : "text-green-600"}`}>
+                    <FontAwesomeIcon icon={faClock} className="mr-2" />
+                    {room.nextReservation
+                      ? language === "fi"
+                        ? `Vapaa klo ${new Date(room.nextReservation.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} asti`
+                        : `Available until ${new Date(room.nextReservation.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                      : language === "fi"
+                        ? "Vapaana koko päivän"
+                        : "Available all day"}
+                  </p>
+                )}
+
+
+                {/* Reservability Icons - Vertically Aligned */}
+                <div className="flex flex-col items-start mt-3">
+                  {room.reservableStaff === "true" && (
+                    <span className="flex items-center text-sm text-metropoliaGreen font-semibold">
+                      <FontAwesomeIcon icon={faUserTie} className="mr-2 text-metropoliaGreen text-lg" />
+                      {language === "fi" ? "Henkilökunta" : "Staff"}
+                    </span>
+                  )}
+
+                  {room.reservableStudents === "true" && (
+                    <span className="flex items-center text-sm text-metropoliaRed font-semibold mt-2">
+                      <FontAwesomeIcon icon={faUserGraduate} className="mr-2 text-metropoliaRed text-lg" />
+                      {language === "fi" ? "Opiskelijat" : "Students"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 🖼️ Right Side - Image & QR Code */}
+              <div className="flex flex-col items-center space-y-2 sm:space-y-4">
+                {roomImage && (
+                  <img src={roomImage} alt={`Room ${room.roomNumber}`} className="w-32 h-24 object-cover rounded-md shadow-sm" />
+                )}
+                <QRCodeSVG value={generateTuudoLink(room.roomNumber)} size={100} className="border border-gray-300 p-1 rounded" />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 

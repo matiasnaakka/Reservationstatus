@@ -19,19 +19,3 @@ export const fetchAllRooms = async (floor, startDate, endDate) => {
     throw error;
   }
 };
-
-
-
-// Fetch business hours
-export const fetchBusinessHours = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/api/businesshours`, {
-      headers: { apikey: API_KEY },
-    });
-    console.log("Business hours fetched:", response.data);
-    return response.data.campuses;
-  } catch (error) {
-    console.error("Error fetching business hours:", error);
-    throw error;
-  }
-};

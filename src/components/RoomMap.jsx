@@ -3,7 +3,6 @@ import InlineSVG from "react-inlinesvg";
 import Floor7SVG from "../assets/7thfloormap.svg";
 import Floor6SVG from "../assets/6thfloormap.svg";
 import Floor5SVG from "../assets/5thfloormap.svg";
-import { isRoomReserved } from "./RoomList";
 
 const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
   const svgRef = useRef(null);
@@ -94,25 +93,23 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        overflow: "hidden",
+        overflow: "hidden",  // ✅ Prevent scrolling
         position: "relative",
       }}
     >
       <InlineSVG
         src={floorSVG}
-        onLoad={() => {
-          console.log("✅ SVG Loaded");
-          setSvgLoaded(true);
-        }}
-        innerRef={svgRef} // ✅ Store reference for DOM access
+        onLoad={() => setSvgLoaded(true)}
+        innerRef={svgRef}
         style={{
           width: "100%",
-          height: "auto",
-          maxHeight: "100%",
+          height: "100%",  // ✅ Ensure it takes full height
+          maxHeight: "100vh",  // ✅ Prevent overflow
+          objectFit: "contain",
         }}
       />
     </div>
-  );
+  );  
 };
 
 export default RoomMap;

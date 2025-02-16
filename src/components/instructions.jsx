@@ -2,71 +2,98 @@ import React from "react";
 
 const Instructions = () => {
   return (
-    <div className="bg-gray-100 p-3 rounded shadow-sm text-sm mb-3 border border-gray-300">
-      <h2 className="text-base font-semibold text-gray-800 mb-2">📌 How to Use URL Parameters</h2>
-      <p className="text-gray-700 mb-2">
-        Use URL parameters to filter rooms and adjust the floor map display dynamically.
+    <div className="bg-gray-100 p-4 rounded-lg shadow-md text-sm border border-gray-300">
+      <h2 className="text-lg font-semibold text-orange-600 mb-3">Using URL Parameters</h2>
+      <p className="text-gray-700 mb-3">
+        URL parameters allow filtering rooms, adjusting the display, and enabling auto-scrolling or loop mode.
       </p>
 
-      <ul className="list-disc pl-5 text-gray-600 space-y-2">
+      <ul className="list-disc pl-5 text-gray-700 space-y-3">
         <li>
-          <strong>📅 specificdate</strong>: Select a specific date for room availability.
+          <strong className="text-orange-600">Floor</strong>: Display available rooms for a specific floor.
           <br />
-          <code className="bg-gray-200 px-2 py-1 rounded ml-1">?specificdate=2025-01-13</code>
-        </li>
-
-        <li>
-          <strong>🏢 floor</strong>: Choose a specific floor to display its free rooms and floor map.
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?floor=6</code>
           <br />
-          <code className="bg-gray-200 px-2 py-1 rounded ml-1">?floor=6</code>
+          <span className="text-gray-600 text-xs">
+            Selecting a floor displays only its available rooms and enables the floor map.
+          </span>
           <br />
-          <span className="text-gray-500 text-xs">
-            (Selecting a floor will show only its free rooms and enable the floor map.)
+          <span className="text-red-600 font-semibold text-xs">
+            ⚠️ Note: <strong>`loopMode=true` does not work when `?floor=` is set.</strong>
           </span>
         </li>
 
         <li>
-          <strong>🎓 reservable</strong>: Show only student-reservable rooms.
+          <strong className="text-orange-600">Reservable</strong>: Filter rooms by student or staff reservations.
           <br />
-          <code className="bg-gray-200 px-2 py-1 rounded ml-1">?reservable=students</code>
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?reservable=students</code>
           <br />
-          <span className="text-gray-500 text-xs">
-            (Only rooms available for student reservations will be displayed.)
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?reservable=staff</code>
+        </li>
+
+        <li>
+          <strong className="text-orange-600">Show Free Rooms</strong>: Display available rooms from all floors.
+          <br />
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?showFree=true</code>
+          <br />
+          <span className="text-gray-600 text-xs">
+            Hides the floor map and lists all available rooms.
           </span>
         </li>
 
         <li>
-          <strong>✅ showFree</strong>: Display all free rooms across all floors (default mode).
+          <strong className="text-orange-600">Loop Mode</strong>: Automatically cycle through different screens.
           <br />
-          <code className="bg-gray-200 px-2 py-1 rounded ml-1">?showFree=true</code>
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?loopMode=true</code>
           <br />
-          <span className="text-gray-500 text-xs">
-            (This will hide the floor map and list free rooms from all floors.)
+          <span className="text-gray-600 text-xs">
+            Rotates between the room list, map, and feedback screen at set intervals.
+          </span>
+          <br />
+          <span className="text-red-600 font-semibold text-xs">
+            ⚠️ `loopMode` cannot be used with `?floor=`.
           </span>
         </li>
 
         <li>
-          <strong>🏢 Default Behavior</strong>: 
+          <strong className="text-orange-600">Loop Duration</strong>: Set custom durations for each screen.
           <br />
-          - When **no floor is selected**, all free rooms are displayed, and the floor map is **hidden**.  
-          - When **a floor is selected**, only its free rooms are shown, and the floor map is **enabled**.  
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?loopRoom=10</code>
+          <br />
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?loopMap=15</code>
+          <br />
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?loopFeedback=8</code>
+          <br />
+          <span className="text-gray-600 text-xs">
+            Defines the number of seconds each screen remains visible before switching.
+          </span>
         </li>
 
         <li>
-          <strong>🔗 Combine Multiple Parameters</strong>: Customize your search with multiple filters.
+          <strong className="text-orange-600">Auto Scroll</strong>: Enables automatic scrolling in the room list.
           <br />
-          <code className="bg-gray-200 px-2 py-1 rounded ml-1">
-            ?specificdate=2025-01-13&floor=6&reservable=students
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">?autoScroll=true</code>
+          <br />
+          <span className="text-gray-600 text-xs">
+            Useful for displaying information on public screens or digital signage.
+          </span>
+        </li>
+
+        <li>
+          <strong className="text-orange-600">Combining Parameters</strong>: Apply multiple filters simultaneously.
+          <br />
+          <code className="bg-orange-100 px-2 py-1 rounded text-orange-700">
+            ?floor=6&reservable=students&loopMode=true
           </code>
           <br />
-          <span className="text-gray-500 text-xs">
-            (This will show student-reservable free rooms on the 6th floor for January 13, 2025.)
+          <span className="text-red-600 font-semibold text-xs">
+            ⚠️ `loopMode=true` will not work when combined with `?floor=`.
           </span>
         </li>
       </ul>
 
       <p className="text-gray-700 mt-4 text-sm">
-        Need help? Adjust filters or refresh if needed. 🚀
+        For any issues, adjust the filters or refresh the page.
       </p>
     </div>
   );
