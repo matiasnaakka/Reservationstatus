@@ -7,6 +7,7 @@ import path from 'path';
 
 // Determine if we are in production (GitHub Pages) or local development
 const isProduction = process.env.NODE_ENV === 'production';
+const isCI = process.env.CI === 'true'; // Detect GitHub Actions
 
 export default defineConfig({
   plugins: [
@@ -20,12 +21,12 @@ export default defineConfig({
     // Use gzip instead of brotli for GitHub Pages compatibility
     isProduction &&
       compression({
-        algorithm: 'gzip', // GitHub Pages supports gzip
+        algorithm: 'gzip',
         ext: '.gz',
       }),
 
-    // Optimize images only in production (to speed up local builds)
-    isProduction &&
+    // ⚠️ Disable ViteImageOptimizer in GitHub Actions (CI/CD)
+    !isCI &&
       ViteImageOptimizer({
         png: {
           quality: 80,
@@ -42,13 +43,13 @@ export default defineConfig({
           lossless: false,
         },
         avif: {
-          quality: 1, // **Lowest possible AVIF quality for fastest loading**
-          speed: 10, // **Fastest AVIF compression setting**
+          quality: 1, // Lowest possible AVIF quality
+          speed: 10, // Fastest AVIF compression
           lossless: false,
         },
         cache: true,
         logStats: true,
-        cacheLocation: path.resolve(__dirname, '.cache/vite-plugin-image-optimizer'), // Persistent cache
+        cacheLocation: path.resolve(__dirname, '.cache/vite-plugin-image-optimizer'),
       }),
   ].filter(Boolean), // Removes false/null values to avoid errors
 
