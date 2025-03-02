@@ -16,26 +16,20 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
+      uses: actions/checkout@v2
 
     - name: Set up Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v2
       with:
-        node-version: '20'  # Ensure compatibility
-        cache: 'npm'
-
-    - name: Cache build artifacts
-      uses: actions/cache@v3
-      with:
-        path: .cache
-        key: ${{ runner.os }}-vite-build-${{ hashFiles('**/vite.config.js') }}
-        restore-keys: |
-          ${{ runner.os }}-vite-build-
+        node-version: '22'
 
     - name: Install dependencies
-      run: npm ci
+      run: npm install
+
+    - name: Set environment variables
+      run: |
+        echo VITE_API_KEY=${{ secrets.VITE_API_KEY }} >> .env
+        echo VITE_API_URL=${{ secrets.VITE_API_URL }} >> .env
 
     - name: Build the React app
       run: npm run build
@@ -46,7 +40,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: "./dist"
+        path: "./dist" # Ensure the correct build folder
 
     - name: Deploy to GitHub Pages
       id: deployment
