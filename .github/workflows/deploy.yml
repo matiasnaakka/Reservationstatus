@@ -23,7 +23,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'  # Use stable LTS version
+        node-version: '20'  # Use stable LTS version
         cache: 'npm'  # Cache dependencies
 
     - name: Cache node modules
