@@ -42,8 +42,6 @@ html, body, #root {
   background-color: yellow;
 }
 
-*******
-
 /* Smaller room cards */
 .room-card {
   padding: 0.5rem; /* Smaller padding */
