@@ -16,22 +16,31 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
-        fetch-depth: 0 # Ensure full history for debugging
+        fetch-depth: 0
 
     - name: Set up Node.js
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
-        node-version: '22'
+        node-version: '18'  # Use stable LTS version
+        cache: 'npm'  # Cache dependencies
+
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci  # Faster than npm install
 
     - name: Set environment variables
       run: |
-        echo VITE_API_KEY=${{ secrets.VITE_API_KEY }} >> .env
-        echo VITE_API_URL=${{ secrets.VITE_API_URL }} >> .env
+        echo "VITE_API_KEY=${{ secrets.VITE_API_KEY }}" >> $GITHUB_ENV
+        echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> $GITHUB_ENV
 
     - name: Build the React app
       run: npm run build
@@ -42,7 +51,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
       with:
-        path: "./dist" # Ensure the correct build folder
+        path: "./dist"
 
     - name: Deploy to GitHub Pages
       id: deployment
