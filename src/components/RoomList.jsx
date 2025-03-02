@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -10,6 +10,7 @@ import {
   faUserGraduate  // ✅ Add this for "Opiskelijat"
 } from "@fortawesome/free-solid-svg-icons";
 
+// filepath: /c:/Users/matia/Desktop/projekti/src/components/RoomList.jsx
 import roomImages from "../roomImages"; // ✅ Import room images
 
 // Translation object for room types
@@ -62,30 +63,16 @@ export const isRoomReserved = (room) => {
   return false; // ✅ Huone on vapaa
 };
 
-
-// Function to check if the room has a reservation later today
-const hasReservationToday = (room) => {
-  const now = new Date();
-  if (!room.nextReservation) return false;
-
-  const nextReservationTime = new Date(room.nextReservation.startDate);
-  return nextReservationTime.getDate() === now.getDate();
-};
-
 const useAutoScroll = (ref, enabled, speed = 50) => {
   useEffect(() => {
     if (!enabled) {
-      console.log("🛑 AutoScroll disabled");
       return; // ✅ Stop if autoScroll=false
     }
 
     const element = ref.current;
     if (!element) {
-      console.warn("🚨 No element to scroll!");
       return;
     }
-
-    console.log("✅ AutoScroll started");
 
     let animationFrameId;
     let lastTime = 0;
@@ -96,7 +83,6 @@ const useAutoScroll = (ref, enabled, speed = 50) => {
 
       if (time - lastTime > speed) {
         if (element.scrollTop + element.clientHeight >= element.scrollHeight) {
-          console.log("🔄 Reset scrolling to top");
           element.scrollTop = 0;
         } else {
           element.scrollTop += scrollStep;
@@ -110,7 +96,6 @@ const useAutoScroll = (ref, enabled, speed = 50) => {
     animationFrameId = requestAnimationFrame(smoothScroll);
 
     return () => {
-      console.log("⏹️ AutoScroll stopped");
       cancelAnimationFrame(animationFrameId);
     };
   }, [ref, enabled, speed]);
@@ -129,14 +114,17 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
   const scrollRef = useRef(null);
   useAutoScroll(scrollRef, autoScroll, 30); // ✅ AutoScroll now works correctly
 
-  const filteredRooms = rooms.filter((room) =>
-    !isRoomReserved(room) &&
-    (
-      (!reservableStudents && !reservableStaff) || // ✅ No filter applied = show all
-      (reservableStudents && room.reservableStudents === "true") ||
-      (reservableStaff && room.reservableStaff === "true")
-    )
-  );
+  const filteredRooms = useMemo(() => {
+    return rooms.filter(room =>
+      !isRoomReserved(room) &&
+      (
+        (!reservableStudents && !reservableStaff) ||
+        (reservableStudents && room.reservableStudents === "true") ||
+        (reservableStaff && room.reservableStaff === "true")
+      )
+    );
+  }, [rooms, reservableStudents, reservableStaff]);
+
 
 
   if (filteredRooms.length === 0) {
@@ -155,14 +143,16 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
       {/* 🟢 Responsive Grid for Room Cards */}
       <div
         className={`grid gap-4 ${showMap
-            ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-            : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+          ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+          : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
           }`}
       >
         {filteredRooms.map((room) => {
           const roomReserved = isRoomReserved(room);
           const formattedRoomNumber = room.roomNumber.replace(/\./g, "_");
           const roomImage = roomImages[formattedRoomNumber];
+
+          console.log(`Room Image for ${room.roomNumber}:`, roomImage);
 
           return (
             <div
@@ -227,7 +217,13 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
               {/* 🖼️ Right Side - Image & QR Code */}
               <div className="flex flex-col items-center space-y-2 sm:space-y-4">
                 {roomImage && (
-                  <img src={roomImage} alt={`Room ${room.roomNumber}`} className="w-32 h-24 object-cover rounded-md shadow-sm" />
+                  <img
+                    src={roomImage}
+                    alt={`Room ${room.roomNumber}`}
+                    className="w-32 h-24 object-cover rounded-md shadow-sm"
+                    width="128" height="96"
+                    loading="lazy" decode="async"
+                  />
                 )}
                 <QRCodeSVG value={generateTuudoLink(room.roomNumber)} size={100} className="border border-gray-300 p-1 rounded" />
               </div>
