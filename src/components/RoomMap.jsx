@@ -12,8 +12,6 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
   const updateRoomColors = () => {
     if (!svgRef.current || !svgLoaded) return;
 
-    console.log("✅ SVG is loaded, updating room colors...");
-
     // ✅ Rooms that should always be yellow (5th floor)
     const alwaysYellowRooms = ["KMC550", "KMC590"];
 
@@ -26,7 +24,6 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
       const roomElement = svgRef.current.querySelector(`#${normalizedId}`);
 
       if (roomElement) {
-        console.log(`✅ Found room in SVG: ${room.roomNumber}`, roomElement);
 
         let roomColor = "#4caf50"; // Default: Green (Free)
 

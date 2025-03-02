@@ -152,8 +152,6 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
           const formattedRoomNumber = room.roomNumber.replace(/\./g, "_");
           const roomImage = roomImages[formattedRoomNumber];
 
-          console.log(`Room Image for ${room.roomNumber}:`, roomImage);
-
           return (
             <div
               key={room.roomNumber}
