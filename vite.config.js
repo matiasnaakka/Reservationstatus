@@ -6,7 +6,7 @@ import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 import path from 'path';
 
 // Determine if we are in production (GitHub Pages) or local development
-const isGitHubPages = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production';
 
 export default defineConfig({
   plugins: [
@@ -16,12 +16,48 @@ export default defineConfig({
         icon: true,
       },
     }),
-  ],
-  base: isGitHubPages ? '/Reservationstatus/' : './',
+
+    // Use gzip instead of brotli for GitHub Pages compatibility
+    isProduction &&
+      compression({
+        algorithm: 'gzip', // GitHub Pages supports gzip
+        ext: '.gz',
+      }),
+
+    // Optimize images only in production (to speed up local builds)
+    isProduction &&
+      ViteImageOptimizer({
+        png: {
+          quality: 80,
+          compressionLevel: 9,
+        },
+        jpeg: {
+          quality: 80,
+        },
+        jpg: {
+          quality: 80,
+        },
+        webp: {
+          quality: 80,
+          lossless: false,
+        },
+        avif: {
+          quality: 1, // **Lowest possible AVIF quality for fastest loading**
+          speed: 10, // **Fastest AVIF compression setting**
+          lossless: false,
+        },
+        cache: true,
+        logStats: true,
+        cacheLocation: path.resolve(__dirname, '.cache/vite-plugin-image-optimizer'), // Persistent cache
+      }),
+  ].filter(Boolean), // Removes false/null values to avoid errors
+
+  base: isProduction ? '/Reservationstatus/' : './',
+
   build: {
     outDir: 'dist',
-    // Configure asset handling for images
     assetsInlineLimit: 4096, // 4kb - files smaller than this will be inlined as base64
+
     rollupOptions: {
       output: {
         // Use chunking for better caching
@@ -30,6 +66,7 @@ export default defineConfig({
             return 'vendor';
           }
         },
+
         // Optimize asset file names for better caching
         assetFileNames: (assetInfo) => {
           if (assetInfo.name) {
