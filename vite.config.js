@@ -16,37 +16,6 @@ export default defineConfig({
         icon: true,
       },
     }),
-    compression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
-    }),
-    ViteImageOptimizer({
-      // Image optimization options
-      png: {
-        quality: 80,
-        compressionLevel: 9,
-      },
-      jpeg: {
-        quality: 80,
-      },
-      jpg: {
-        quality: 80,
-      },
-      webp: {
-        quality: 80,
-        lossless: false,
-      },
-      avif: {
-        quality: 5, // Lower quality for smaller file size
-        lossless: false,
-      },
-      // Cache optimized images for better rebuild performance
-      cache: true,
-      // Enable logging for debugging
-      logStats: true,
-      // Specify a valid cache directory
-      cacheLocation: path.resolve(__dirname, 'node_modules/.cache/vite-plugin-image-optimizer'), // Use path.resolve
-    }),
   ],
   base: isGitHubPages ? '/Reservationstatus/' : './',
   build: {
