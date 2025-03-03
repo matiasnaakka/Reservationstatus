@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -6,12 +6,11 @@ import {
   faBuilding,
   faRulerCombined,
   faClock,
-  faUserTie,      // ✅ Add this for "Henkilökunta"
-  faUserGraduate  // ✅ Add this for "Opiskelijat"
+  faUserTie,
+  faUserGraduate
 } from "@fortawesome/free-solid-svg-icons";
-
-// filepath: /c:/Users/matia/Desktop/projekti/src/components/RoomList.jsx
-import roomImages from "../roomImages"; // ✅ Import room images
+import roomImages from "../roomImages"; // Import room images
+import { useAutoScroll } from "../hooks/useAutoScroll"; // Import the optimized hook
 
 // Translation object for room types
 const detailsTranslations = {
@@ -39,7 +38,7 @@ const generateTuudoLink = (roomNumber) => {
 
 // Function to check if the room is currently reserved
 export const isRoomReserved = (room) => {
-  const now = new Date(); // 🔥 Hanki nykyhetki
+  const now = new Date(); // Hanki nykyhetki
 
   // Tarkista, onko nykyinen varaus voimassa
   if (room.currentReservation) {
@@ -56,53 +55,15 @@ export const isRoomReserved = (room) => {
     const nextEnd = new Date(room.nextReservation.endDate);
 
     if (now >= nextStart && now < nextEnd) {
-      return true; // 🛑 Tämä varaus on jo alkanut
+      return true; // Tämä varaus on jo alkanut
     }
   }
 
-  return false; // ✅ Huone on vapaa
-};
-
-const useAutoScroll = (ref, enabled, speed = 50) => {
-  useEffect(() => {
-    if (!enabled) {
-      return; // ✅ Stop if autoScroll=false
-    }
-
-    const element = ref.current;
-    if (!element) {
-      return;
-    }
-
-    let animationFrameId;
-    let lastTime = 0;
-    const scrollStep = 1;
-
-    const smoothScroll = (time) => {
-      if (!enabled || !element) return; // ✅ Stop if disabled
-
-      if (time - lastTime > speed) {
-        if (element.scrollTop + element.clientHeight >= element.scrollHeight) {
-          element.scrollTop = 0;
-        } else {
-          element.scrollTop += scrollStep;
-        }
-        lastTime = time;
-      }
-
-      animationFrameId = requestAnimationFrame(smoothScroll);
-    };
-
-    animationFrameId = requestAnimationFrame(smoothScroll);
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [ref, enabled, speed]);
+  return false; // Huone on vapaa
 };
 
 import { format, parseISO } from "date-fns";
-import { fi } from "date-fns/locale"; // 🇫🇮 Suomen kielinen muotoilu
+import { fi } from "date-fns/locale"; // Suomen kielinen muotoilu
 
 // Helper function to format closing time
 const formatClosingTime = (closingTime) => {
@@ -112,7 +73,7 @@ const formatClosingTime = (closingTime) => {
 
 const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff, showMap }) => {
   const scrollRef = useRef(null);
-  useAutoScroll(scrollRef, autoScroll, 30); // ✅ AutoScroll now works correctly
+  useAutoScroll(scrollRef, autoScroll, 25); // Use the optimized hook
 
   const filteredRooms = useMemo(() => {
     return rooms.filter(room =>
@@ -125,7 +86,9 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
     );
   }, [rooms, reservableStudents, reservableStaff]);
 
-
+  const translateDetails = useCallback((details, language) => {
+    return detailsTranslations[details]?.[language] || details;
+  }, []);
 
   if (filteredRooms.length === 0) {
     return (
@@ -138,9 +101,9 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
   }
 
   return (
-    <div ref={scrollRef} className="overflow-auto h-full w-full" style={{ scrollBehavior: "smooth", maxHeight: "90vh" }}>
+    <div ref={scrollRef} className="overflow-auto h-full w-full" style={{ scrollBehavior: "smooth", maxHeight: "90vh", willChange: "transform" }}>
 
-      {/* 🟢 Responsive Grid for Room Cards */}
+      {/* Responsive Grid for Room Cards */}
       <div
         className={`grid gap-4 ${showMap
           ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
@@ -157,7 +120,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
               key={room.roomNumber}
               className="relative border rounded-lg dynamic-padding shadow-md flex flex-col sm:flex-row bg-white p-4 w-full max-w-md room-card"
             >
-              {/* 📌 Left Side - Room Details */}
+              {/* Left Side - Room Details */}
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-orange-600">
                   {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
@@ -193,7 +156,6 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                   </p>
                 )}
 
-
                 {/* Reservability Icons - Vertically Aligned */}
                 <div className="flex flex-col items-start mt-3">
                   {room.reservableStaff === "true" && (
@@ -212,15 +174,12 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                 </div>
               </div>
 
-              {/* 🖼️ Right Side - Image & QR Code */}
+              {/* Right Side - Image & QR Code */}
               <div className="flex flex-col items-center space-y-2 sm:space-y-4">
                 {roomImage && (
                   <img
                     src={roomImage}
-                    alt={`Room ${room.roomNumber}`}
-                    className="w-32 h-24 object-cover rounded-md shadow-sm"
-                    width="128" height="96"
-                    loading="lazy" decode="async"
+                    className="w-32 h-24 object-cover rounded-md"
                   />
                 )}
                 <QRCodeSVG value={generateTuudoLink(room.roomNumber)} size={100} className="border border-gray-300 p-1 rounded" />
