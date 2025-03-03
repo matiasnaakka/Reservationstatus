@@ -179,10 +179,12 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                 {roomImage && (
                   <img
                     src={roomImage}
-                    className="w-32 h-24 object-cover rounded-md"
+                    className="w-32 h-24 object-cover rounded-md hover:scale-150"
                   />
                 )}
-                <QRCodeSVG value={generateTuudoLink(room.roomNumber)} size={100} className="border border-gray-300 p-1 rounded" />
+                <a href={generateTuudoLink(room.roomNumber)} target="_blank" rel="noopener noreferrer">
+                  <QRCodeSVG value={generateTuudoLink(room.roomNumber)} size={100} className="border border-gray-300 p-1 rounded" />
+                </a>
               </div>
             </div>
           );
