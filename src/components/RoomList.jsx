@@ -72,19 +72,25 @@ const formatClosingTime = (closingTime) => {
 };
 
 const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff, showMap }) => {
+  
   const scrollRef = useRef(null);
   useAutoScroll(scrollRef, autoScroll, 25); // Use the optimized hook
-
   const filteredRooms = useMemo(() => {
-    return rooms.filter(room =>
+    return rooms.filter(room => 
       !isRoomReserved(room) &&
       (
-        (!reservableStudents && !reservableStaff) ||
-        (reservableStudents && room.reservableStudents === "true") ||
-        (reservableStaff && room.reservableStaff === "true")
+        (!reservableStudents && !reservableStaff) || 
+        (reservableStudents && 
+          room.reservableStudents === "true" && 
+          (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila") // ✅ Show only these room types for students
+        ) ||
+        (reservableStaff && 
+          room.reservableStaff === "true" && 
+          room.details === "Henkilöstön työtila") // ✅ Ensure only staff workspaces
       )
     );
   }, [rooms, reservableStudents, reservableStaff]);
+  
 
   const translateDetails = useCallback((details, language) => {
     return detailsTranslations[details]?.[language] || details;

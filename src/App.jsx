@@ -149,14 +149,19 @@ const App = () => {
         return room;
       });
 
-      const filteredRoomCards = allRooms.filter((room) =>
+      const filteredRoomCards = allRooms.filter(room =>
         !isRoomReserved(room) &&
         (
           (!reservableStudents && !reservableStaff) ||
-          (reservableStudents && room.reservableStudents === "true") ||
-          (reservableStaff && room.reservableStaff === "true")
+          (reservableStudents && 
+            room.reservableStudents === "true" && 
+            (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila") // ✅ Only allow these rooms
+          ) ||
+          (reservableStaff && 
+            room.reservableStaff === "true" && 
+            room.details === "Henkilöstön työtila") // ✅ Only allow staff workspaces
         )
-      );
+      );      
 
       setRooms([...allRooms]);
       setFilteredRooms(filteredRoomCards);
@@ -303,7 +308,7 @@ const App = () => {
     <div className="h-screen w-screen flex bg-gray-100">
       {/* ✅ Countdown Banner (Only if loopMode is active) */}
       {loopMode && (
-        <div className="absolute top-2 right-2 bg-black bg-opacity-80 text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all duration-500 ease-in-out transform z-[9999] flex items-center space-x-3">
+       <div className="absolute bottom-4 right-4 bg-black bg-opacity-80 text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all duration-500 ease-in-out transform z-[9999] flex items-center space-x-3">
           <div className="text-right">
             <p className="text-sm opacity-80 tracking-wide">{translations[language].nextScreen}</p>
             <p className="text-lg font-extrabold tracking-widest">{nextScreen}</p>
