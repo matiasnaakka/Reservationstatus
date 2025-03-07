@@ -229,8 +229,8 @@ const App = () => {
     return () => clearInterval(interval);
   }, [selectedFloor, reservableStudents, reservableStaff]); // 🔥 Varmista, että useEffect kutsuu API:ta vain tarpeen mukaan
 
-  const loopRoomTime = parseInt(searchParams.get("loopRoom")) || 40; // Default 5s
-  const loopMapTime = parseInt(searchParams.get("loopMap")) || 15; // Default 5s
+  const loopRoomTime = parseInt(searchParams.get("loopRoom")) || 20; // Default 5s
+  const loopMapTime = parseInt(searchParams.get("loopMap")) || 10; // Default 5s
   const loopFeedbackTime = parseInt(searchParams.get("loopFeedback")) || 5; // Default 5s
   const [currentScreen, setCurrentScreen] = useState("roomList"); // First screen
   const [timeLeft, setTimeLeft] = useState(loopRoomTime);
