@@ -1,5 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+
 import { fetchAllRooms } from "./api";
 const RoomList = lazy(() => import("./components/RoomList"));
 const RoomMap = lazy(() => import("./components/RoomMap"));
@@ -36,6 +37,9 @@ const App = () => {
   const [nextScreen, setNextScreen] = useState("Feedback Screen"); // Text for what's next
   const [roomDetails, setRoomDetails] = useState([]); // Cached room details
   const [roomReservations, setRoomReservations] = useState([]);
+
+  const [isLargeCountdown, setIsLargeCountdown] = useState(false);
+
 
   // Floors list for dropdown
   const floors = ["2", "5", "6", "7"];
@@ -153,15 +157,17 @@ const App = () => {
         !isRoomReserved(room) &&
         (
           (!reservableStudents && !reservableStaff) ||
-          (reservableStudents && 
-            room.reservableStudents === "true" && 
+          (reservableStudents &&
+            room.reservableStudents === "true" &&
             (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila") // ✅ Only allow these rooms
           ) ||
-          (reservableStaff && 
-            room.reservableStaff === "true" && 
+          (reservableStaff &&
+            room.reservableStaff === "true" &&
             room.details === "Henkilöstön työtila") // ✅ Only allow staff workspaces
         )
-      );      
+      );
+
+      console.log("Fetched rooms:", allRooms); // ✅ Log the fetched rooms
 
       setRooms([...allRooms]);
       setFilteredRooms(filteredRoomCards);
@@ -303,21 +309,43 @@ const App = () => {
 
   const showFullWidthCards = !loopMode && (!showMap || selectedFloor === "all");
 
+  useEffect(() => {
+    const checkResolution = () => {
+      const isTargetSize = window.innerWidth === 1080 && window.innerHeight === 1980;
+      setIsLargeCountdown(isTargetSize);
+    };
+
+    checkResolution();
+    window.addEventListener("resize", checkResolution);
+    return () => window.removeEventListener("resize", checkResolution);
+  }, []);
+
   return (
 
-    <div className="h-screen w-screen flex bg-gray-100">
+    <div className="h-screen w-screen flex bg-gray-100 overflow-hidden">
       {/* ✅ Countdown Banner (Only if loopMode is active) */}
       {loopMode && (
-       <div className="absolute bottom-4 right-4 bg-black bg-opacity-80 text-white font-bold px-6 py-3 rounded-xl shadow-lg transition-all duration-500 ease-in-out transform z-[9999] flex items-center space-x-3">
+        <div className={`absolute bottom-4 right-4 bg-black bg-opacity-80 text-white font-bold rounded-xl shadow-lg transition-all duration-500 ease-in-out transform z-[9999] flex items-center space-x-4
+    ${isLargeCountdown ? "px-10 py-6" : "px-6 py-3"}`}>
+
+          {/* Tekstit vasemmalla */}
           <div className="text-right">
-            <p className="text-sm opacity-80 tracking-wide">{translations[language].nextScreen}</p>
-            <p className="text-lg font-extrabold tracking-widest">{nextScreen}</p>
+            <p className={`tracking-wide opacity-80 ${isLargeCountdown ? "text-2xl" : "text-sm"}`}>
+              {translations[language].nextScreen}
+            </p>
+            <p className={`${isLargeCountdown ? "text-3xl" : "text-lg"} font-extrabold tracking-widest`}>
+              {nextScreen}
+            </p>
           </div>
-          <div className="w-12 h-12 flex items-center justify-center bg-white text-black rounded-full font-extrabold text-xl shadow-md animate-bounce">
+
+          {/* Ajan laskuri oikealla */}
+          <div className={`flex items-center justify-center bg-white text-black rounded-full font-extrabold shadow-md animate-bounce
+      ${isLargeCountdown ? "w-24 h-24 text-5xl" : "w-12 h-12 text-xl"}`}>
             {timeLeft}
           </div>
         </div>
       )}
+
       {/* ✅ Fullscreen Feedback Screen Mode (Only if loopMode=true) */}
       {loopMode && showFeedbackScreen ? (
         <div className="absolute inset-0 font-sans flex justify-center items-center bg-white transition-opacity duration-1000">
@@ -363,10 +391,13 @@ const App = () => {
           <header className="flex flex-wrap items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
               {/* 🔹 Pääotsikko */}
-              <h1 className="text-4xl font-title text-metropoliaOrange font-bold drop-shadow-lg flex items-center">
+              <h1 className={`font-title text-metropoliaOrange font-bold drop-shadow-lg flex items-center 
+  ${isLargeCountdown ? "text-6xl" : "text-4xl"}`}>
+
                 {translations[language].title}
                 {reservableAudience && (
-                  <span className="ml-4 text-lg text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm">
+                  <span className={`ml-4 text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm 
+                    ${isLargeCountdown ? "text-2xl" : "text-lg"}`}>
                     {reservableAudience}
                   </span>
                 )}

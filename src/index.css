@@ -36,28 +36,54 @@ html, body, #root {
   margin-top: 1rem;
 }
 
-.qr-code canvas {
-  border: 100px solid #ddd;
-  border-radius: 8px;
-  background-color: yellow;
-}
-
 /* Smaller room cards */
 .room-card {
   padding: 0.5rem; /* Smaller padding */
-  font-size: 0.8rem; /* Smaller font size */
+  font-size: 0.9rem; /* Smaller font size */
   border-radius: 4px; /* Slightly rounded corners */
 }
 
-.room-card .qr-code {
-  margin-top: 0.5rem;
-}
-
-.room-card .qr-code p {
-  font-size: 0.7rem; /* Small text for QR instructions */
-}
-
 .room-card p {
-  margin: 0.25rem 0; /* Reduce spacing between paragraphs */
+  margin: 0.5rem 0; /* Reduce spacing between paragraphs */
+}
+
+.room-card {
+  overflow: hidden; /* Estetään ylivuoto */
+}
+
+
+.room-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 1660px) {
+  .room-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1659px) and (min-width: 1338px) {
+  .room-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1337px) and (min-width: 1000px) {
+  .room-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 999px) and (min-width: 700px) {
+  .room-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 699px) {
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
 }
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useMemo, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import useKinectScroll from "../hooks/useKincectScroll";
+
 import {
   faUsers,
   faBuilding,
@@ -72,25 +74,27 @@ const formatClosingTime = (closingTime) => {
 };
 
 const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff, showMap }) => {
-  
+
   const scrollRef = useRef(null);
+
+  useKinectScroll(scrollRef);
   useAutoScroll(scrollRef, autoScroll, 25); // Use the optimized hook
   const filteredRooms = useMemo(() => {
-    return rooms.filter(room => 
+    return rooms.filter(room =>
       !isRoomReserved(room) &&
       (
-        (!reservableStudents && !reservableStaff) || 
-        (reservableStudents && 
-          room.reservableStudents === "true" && 
+        (!reservableStudents && !reservableStaff) ||
+        (reservableStudents &&
+          room.reservableStudents === "true" &&
           (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila") // ✅ Show only these room types for students
         ) ||
-        (reservableStaff && 
-          room.reservableStaff === "true" && 
+        (reservableStaff &&
+          room.reservableStaff === "true" &&
           room.details === "Henkilöstön työtila") // ✅ Ensure only staff workspaces
       )
     );
   }, [rooms, reservableStudents, reservableStaff]);
-  
+
 
   const translateDetails = useCallback((details, language) => {
     return detailsTranslations[details]?.[language] || details;
@@ -107,90 +111,92 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
   }
 
   return (
-    <div ref={scrollRef} className="overflow-auto h-full w-full" style={{ scrollBehavior: "smooth", maxHeight: "90vh", willChange: "transform" }}>
+    <div ref={scrollRef}
+      className="overflow-auto h-full w-full"
+      style={{ scrollBehavior: "smooth", maxHeight: "90vh", willChange: "transform, scroll-position" }}>
 
-      {/* Responsive Grid for Room Cards */}
-      <div
-        className={`grid gap-4 ${showMap
-          ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-          : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
-          }`}
-      >
+
+      <div className={`grid gap-4 ${showMap ? "grid-cols-4" : "room-grid"}`}>
+
         {filteredRooms.map((room) => {
           const roomReserved = isRoomReserved(room);
           const formattedRoomNumber = room.roomNumber.replace(/\./g, "_");
           const roomImage = roomImages[formattedRoomNumber];
 
           return (
-            <div
-              key={room.roomNumber}
-              className="relative border rounded-lg dynamic-padding shadow-md flex flex-col sm:flex-row bg-white p-4 w-full max-w-md room-card"
-            >
-              {/* Left Side - Room Details */}
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-orange-600">
-                  {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
-                </h3>
-
-                <p className="text-gray-600 font-semibold underline">{translateDetails(room.details, language)}</p>
-
-                <p className="flex items-center text-sm text-gray-700">
-                  <FontAwesomeIcon icon={faBuilding} className="mr-2 text-gray-500" />
-                  {language === "fi" ? "Kerros" : "Floor"} {room.floor} | {room.wing || "?"}
-                </p>
-
-                <p className="flex items-center text-sm text-gray-700">
-                  <FontAwesomeIcon icon={faUsers} className="mr-2 text-gray-500" />
-                  {room.persons || "?"} {language === "fi" ? "henkilöä" : "persons"}
-                </p>
-
-                <p className="flex items-center text-sm text-gray-700">
-                  <FontAwesomeIcon icon={faRulerCombined} className="mr-2 text-gray-500" />
-                  {room.squareMeters || "0"} m²
-                </p>
-
-                {!roomReserved && (
-                  <p className={`flex items-center font-bold mt-2 ${room.nextReservation ? "text-orange-500" : "text-green-600"}`}>
-                    <FontAwesomeIcon icon={faClock} className="mr-2" />
-                    {room.nextReservation
-                      ? language === "fi"
-                        ? `Vapaa klo ${new Date(room.nextReservation.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} asti`
-                        : `Available until ${new Date(room.nextReservation.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-                      : language === "fi"
-                        ? "Vapaana koko päivän"
-                        : "Available all day"}
+            <div key={room.roomNumber} className="w-[325px] h-[280px] p-1"> {/* <-- padding antaa varjolle tilaa */}
+              <div className="w-full h-full room-card bg-gradient-to-br from-white via-gray-100 to-gray-100 shadow-lg rounded-2xl ring-1 ring-gray-100 flex flex-row p-3 transition-transform duration-300">
+                {/* Left Side - Room Details */}
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-orange-600">
+                    {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
+                  </h3>
+                  <p className="text-gray-600 font-semibold underline">{translateDetails(room.details, language)}</p>
+                  <p className="flex items-center text-sm text-gray-700">
+                    <FontAwesomeIcon icon={faBuilding} className="mr-2 text-gray-500" />
+                    {language === "fi" ? "Kerros" : "Floor"} {room.floor} | {room.wing || "?"}
                   </p>
-                )}
-
-                {/* Reservability Icons - Vertically Aligned */}
-                <div className="flex flex-col items-start mt-3">
-                  {room.reservableStaff === "true" && (
-                    <span className="flex items-center text-sm text-metropoliaGreen font-semibold">
-                      <FontAwesomeIcon icon={faUserTie} className="mr-2 text-metropoliaGreen text-lg" />
-                      {language === "fi" ? "Henkilökunta" : "Staff"}
-                    </span>
+                  <p className="flex items-center text-sm text-gray-700">
+                    <FontAwesomeIcon icon={faUsers} className="mr-2 text-gray-500" />
+                    {room.persons || "?"} {language === "fi" ? "henkilöä" : "persons"}
+                  </p>
+                  <p className="flex items-center text-sm text-gray-700">
+                    <FontAwesomeIcon icon={faRulerCombined} className="mr-2 text-gray-500" />
+                    {room.squareMeters || "0"} m²
+                  </p>
+                  {!roomReserved && (
+                    <p className={`flex items-center font-bold ${room.nextReservation ? "text-orange-500" : "text-green-600"}`}>
+                      <FontAwesomeIcon icon={faClock} className="mr-2" />
+                      {room.nextReservation
+                        ? language === "fi"
+                          ? `Vapaa klo ${new Date(room.nextReservation.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} asti`
+                          : `Available until ${new Date(room.nextReservation.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                        : language === "fi"
+                          ? "Vapaana koko päivän"
+                          : "Available all day"}
+                    </p>
                   )}
 
-                  {room.reservableStudents === "true" && (
-                    <span className="flex items-center text-sm text-metropoliaRed font-semibold mt-2">
-                      <FontAwesomeIcon icon={faUserGraduate} className="mr-2 text-metropoliaRed text-lg" />
-                      {language === "fi" ? "Opiskelijat" : "Students"}
-                    </span>
-                  )}
+                  {/* Reservability Icons - Vertically Aligned */}
+                  <div className="flex flex-col items-start mt-3">
+                    {room.reservableStaff === "true" && (
+                      <span className="flex items-center text-sm text-metropoliaGreen font-semibold">
+                        <FontAwesomeIcon icon={faUserTie} className="mr-2 text-metropoliaGreen text-lg" />
+                        {language === "fi" ? "Henkilökunta" : "Staff"}
+                      </span>
+                    )}
+
+                    {room.reservableStudents === "true" && (
+                      <span className="flex items-center text-sm text-metropoliaRed font-semibold mt-2">
+                        <FontAwesomeIcon icon={faUserGraduate} className="mr-2 text-metropoliaRed text-lg" />
+                        {language === "fi" ? "Opiskelijat" : "Students"}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* Right Side - Image & QR Code */}
-              <div className="flex flex-col items-center space-y-2 sm:space-y-4">
-                {roomImage && (
-                  <img
-                    src={roomImage}
-                    className="w-32 h-24 object-cover rounded-md hover:scale-150"
-                  />
-                )}
-                <a href={generateTuudoLink(room.roomNumber)} target="_blank" rel="noopener noreferrer">
-                  <QRCodeSVG value={generateTuudoLink(room.roomNumber)} size={100} className="border border-gray-300 p-1 rounded" />
-                </a>
+                {/* Right Side - Image & QR Code */}
+
+                <div className="flex flex-col justify-between items-center sm:ml-4 flex-shrink-0 w-full sm:w-[140px] h-full">
+                  {roomImage && (
+                    <div className="w-[190px] aspect-[4/3] rounded-md overflow-hidden bg-gray-100">
+                      <img
+                        src={roomImage}
+                        className="w-full h-full object-cover rounded-md translate-x-[-35px]"
+                        alt="Room"
+                      />
+                    </div>
+                  )}
+                  <div className="mt-auto">
+                    <a href={generateTuudoLink(room.roomNumber)} target="_blank" rel="noopener noreferrer">
+                      <QRCodeSVG
+                        value={generateTuudoLink(room.roomNumber)}
+                        size={110}
+                        className="border border-gray-200 rounded-md shadow-sm"
+                      />
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           );
