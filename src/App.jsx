@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
+import React, { useState, useEffect, lazy, Suspense, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
 import { fetchAllRooms } from "./api";
@@ -7,11 +7,21 @@ const RoomMap = lazy(() => import("./components/RoomMap"));
 const Instructions = lazy(() => import("./components/instructions"));
 import { isRoomReserved } from "./components/RoomList";
 
+const getInitialScreen = () => {
+  const stored = sessionStorage.getItem("currentLoopScreen");
+  return stored || "roomList";
+};
+
 const App = () => {
+  const [currentScreen, setCurrentScreen] = useState(getInitialScreen());
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [autoScroll, setAutoScroll] = useState(searchParams.get("autoScroll") === "true");
   const loopMode = searchParams.get("loopMode") === "true"; // ✅ Read loop mode from URL
   const navigate = useNavigate();
+
+  const loopTimeoutRef = useRef(null);
+  const countdownIntervalRef = useRef(null);
 
   // Extract floor and reservable settings from URL parameters
   const showFree = !searchParams.has("floor") || searchParams.get("showFree") === "true";
@@ -35,6 +45,7 @@ const App = () => {
   const [showFullScreenMap, setShowFullScreenMap] = useState(loopMode);
   const [showFeedbackScreen, setShowFeedbackScreen] = useState(false);
   const [nextScreen, setNextScreen] = useState("Feedback Screen"); // Text for what's next
+  const [timeLeft, setTimeLeft] = useState(0);
   const [roomDetails, setRoomDetails] = useState([]); // Cached room details
   const [roomReservations, setRoomReservations] = useState([]);
 
@@ -69,9 +80,10 @@ const App = () => {
       scanQRCode: "📲 Scan the room's QR code to reserve it.",
       nextScreen: "Coming next:",
       timeLeft: "",
-      roomListMap: "Room List & Map",
+      roomList: "Room List",
       feedbackScreen: "Feedback Screen",
       fullMap: "Full Map",
+      map: "Map View",
       scanQRCodeHeader: "Scan the room's QR code to reserve it.",
     },
     fi: {
@@ -87,9 +99,10 @@ const App = () => {
       scanQRCode: "📲 Skannaa huoneen QR-koodi varataksesi sen.",
       nextScreen: "Seuraavaksi:",
       timeLeft: "",
-      roomListMap: "Huonelista & Kartta",
+      roomList: "Huonelista",
       feedbackScreen: "Palaute-näyttö",
       fullMap: "Koko näytön kartta",
+      map: "Karttanäkymä",
       scanQRCodeHeader: "Skannaa QR-koodi varataksesi huoneen.",
     },
   };
@@ -123,7 +136,6 @@ const App = () => {
       navigate(newUrl, { replace: true });
     }
   }, [reservableStudents, reservableStaff, selectedFloor, autoScroll, navigate]);
-
 
   const fetchData = async () => {
     if (loading) return; // 🔥 Älä hae uutta dataa, jos jo latauksessa!
@@ -235,70 +247,59 @@ const App = () => {
     return () => clearInterval(interval);
   }, [selectedFloor, reservableStudents, reservableStaff]); // 🔥 Varmista, että useEffect kutsuu API:ta vain tarpeen mukaan
 
-  const loopRoomTime = parseInt(searchParams.get("loopRoom")) || 20; // Default 5s
-  const loopMapTime = parseInt(searchParams.get("loopMap")) || 10; // Default 5s
-  const loopFeedbackTime = parseInt(searchParams.get("loopFeedback")) || 5; // Default 5s
-  const [currentScreen, setCurrentScreen] = useState("roomList"); // First screen
-  const [timeLeft, setTimeLeft] = useState(loopRoomTime);
+  const loopRoomTime = 20;
+  const loopMapTime = 10;
+  const loopFeedbackTime = 10;
 
   useEffect(() => {
     if (!loopMode) return;
 
     const screens = [
-      { screen: "roomList", duration: loopRoomTime, next: "feedbackScreen" },
+      { screen: "roomList", duration: loopRoomTime, next: "map" },
+      { screen: "map", duration: loopMapTime, next: "feedbackScreen" },
       { screen: "feedbackScreen", duration: loopFeedbackTime, next: "roomList" },
     ];
 
     let currentIndex = screens.findIndex((s) => s.screen === currentScreen);
     if (currentIndex === -1) currentIndex = 0;
 
-    let timeoutId;
+    const runLoop = () => {
+      const current = screens[currentIndex];
+      const next = screens.find((s) => s.screen === current.next);
 
-    const switchScreen = () => {
-      let nextScreen;
-      let nextDuration;
+      setCurrentScreen(current.screen);
+      setTimeLeft(current.duration);
+      setNextScreen(translations[language][next.screen]);
 
-      do {
-        const { screen, duration, next, skip } = screens[currentIndex];
+      setShowFeedbackScreen(current.screen === "feedbackScreen");
+      setShowFullScreenMap(current.screen === "map");
 
-        if (skip) {
-          currentIndex = (currentIndex + 1) % screens.length;
-          continue; // Ohitetaan tämä ruutu ja siirrytään seuraavaan
-        }
-
-        nextScreen = screen;
-        nextDuration = duration;
-        currentIndex = (currentIndex + 1) % screens.length;
-
-        break; // Löytyi kelvollinen näyttö, poistutaan loopista
-      } while (true);
-
-      setCurrentScreen(nextScreen);
-      setTimeLeft(nextDuration);
-      setNextScreen(translations[language][screens[currentIndex].screen]);
-
-      // **🔥 Näytetään oikea näyttö aina!**
-      setShowFullScreenMap(false);
-      setShowFeedbackScreen(nextScreen === "feedbackScreen"); // ✅ Tämä varmasti aktivoituu
-
-      timeoutId = setTimeout(switchScreen, nextDuration * 1000);
+      currentIndex = screens.findIndex((s) => s.screen === next.screen);
+      loopTimeoutRef.current = setTimeout(runLoop, current.duration * 1000);
     };
 
-    switchScreen(); // 🔥 Kutsutaan heti ensimmäinen kerta!
-    return () => clearTimeout(timeoutId);
-  }, [loopMode, currentScreen, loopRoomTime, loopMapTime, loopFeedbackTime, selectedFloor]);
+    // ✅ Käynnistä loop asynkronisesti eikä heti
+    loopTimeoutRef.current = setTimeout(runLoop, 0);
 
+    return () => clearTimeout(loopTimeoutRef.current);
+  }, [loopMode, currentScreen]); // 🛠 currentScreen mukaan, jotta indeksi pysyy syncissä
+
+
+  useEffect(() => {
+    if (loopMode) {
+      sessionStorage.setItem("currentLoopScreen", currentScreen);
+    }
+  }, [currentScreen, loopMode]);
 
   useEffect(() => {
     if (!loopMode) return;
 
-    const countdown = setInterval(() => {
+    countdownIntervalRef.current = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : prev));
     }, 1000);
 
-    return () => clearInterval(countdown);
-  }, [loopMode, currentScreen]); // Reset when screen changes  
-
+    return () => clearInterval(countdownIntervalRef.current);
+  }, [loopMode]);
 
   // AutoScroll feature
   useEffect(() => {
@@ -349,29 +350,41 @@ const App = () => {
       {/* ✅ Fullscreen Feedback Screen Mode (Only if loopMode=true) */}
       {loopMode && showFeedbackScreen ? (
         <div className="absolute inset-0 font-sans flex justify-center items-center bg-white transition-opacity duration-1000">
-          <div className="flex flex-col items-center text-center max-w-2xl px-4">
-            <div className="w-96 lg:w-96">
+          <div
+            className={`flex flex-col items-center text-center px-4 transition-all duration-500 ${isLargeCountdown ? "max-w-4xl scale-110" : "max-w-2xl"
+              }`}
+          >
+            <div className={`${isLargeCountdown ? "w-[500px]" : "w-96"} lg:w-96`}>
               <img
                 src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3U2NWptcHI2ZXhxZm9wdnRsNWxkczNucTcwZDU5NGsxZzltZ253NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/R59Hhh3cnfuffSSAxP/giphy.gif"
                 alt="Animated Thumbs Up"
                 className="w-full transform transition-all duration-300 animate-bounce"
               />
             </div>
-            <h2 className="mt-8 mb-4 font-heading text-4xl font-bold text-orange-500 transition-opacity duration-300">
+            <h2
+              className={`mt-8 mb-4 font-heading font-bold text-orange-500 transition-opacity duration-300 ${isLargeCountdown ? "text-5xl" : "text-4xl"
+                }`}
+            >
               Heräsikö päässäsi kehitysehdotuksia?
             </h2>
-            <p className="mb-6 font-body text-xl text-gray-600 transition-opacity duration-300">
+            <p
+              className={`mb-6 font-body text-gray-600 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
+                }`}
+            >
               Skannaa QR-koodi kerro niistä meille.
             </p>
             <div className="relative">
               <img
                 alt="Feedback Form QR Code"
-                className="h-40 w-40 rounded-lg shadow-lg transition-all"
+                className={`rounded-lg shadow-lg transition-all ${isLargeCountdown ? "h-56 w-56" : "h-40 w-40"
+                  }`}
                 src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://docs.google.com/forms/d/e/1FAIpQLSdk-MbIeGFiI_sMFYiY_1QmlV_CiIUBZeovlATbKX5mNDnv_g/viewform?usp=dialog"
               />
             </div>
-            {/* 🏷️ Credits */}
-            <p className="mt-6 font-body text-xl text-gray-500 transition-opacity duration-300">
+            <p
+              className={`mt-6 font-body text-gray-500 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
+                }`}
+            >
               Terveisin Matias
             </p>
           </div>
