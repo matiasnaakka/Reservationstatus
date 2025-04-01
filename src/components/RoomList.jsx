@@ -73,7 +73,7 @@ const formatClosingTime = (closingTime) => {
   return format(parseISO(closingTime), "HH:mm", { locale: fi });
 };
 
-const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff, showMap }) => {
+const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff, showMap, isLargeView }) => {
 
   const scrollRef = useRef(null);
 
@@ -116,7 +116,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
       style={{ scrollBehavior: "smooth", maxHeight: "90vh", willChange: "transform, scroll-position" }}>
 
 
-      <div className={`grid gap-4 ${showMap ? "grid-cols-4" : "room-grid"}`}>
+      <div className={`grid gap-6 ${isLargeView ? "grid-cols-2" : showMap ? "grid-cols-4" : "room-grid"}`}>
 
         {filteredRooms.map((room) => {
           const roomReserved = isRoomReserved(room);
@@ -124,29 +124,37 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
           const roomImage = roomImages[formattedRoomNumber];
 
           return (
-            <div key={room.roomNumber} className="w-[325px] h-[280px] p-1"> {/* <-- padding antaa varjolle tilaa */}
-              <div className="w-full h-full room-card bg-gradient-to-br from-white via-gray-100 to-gray-100 shadow-lg rounded-2xl ring-1 ring-gray-100 flex flex-row p-3 transition-transform duration-300">
-                {/* Left Side - Room Details */}
+            <div key={room.roomNumber} className={`${isLargeView ? "w-[500px] h-[400px]" : "w-[325px] h-[280px]"} p-1`}> {/* <-- padding antaa varjolle tilaa */}
+              <div className={`w-full h-full room-card bg-gradient-to-br from-white via-gray-100 to-gray-100 shadow-lg rounded-2xl ring-1 ring-gray-100 flex flex-row transition-transform duration-300 p-3 ${isLargeView ? "shadow-2xl" : ""}
+}`}>
+                {/* Vasemman puolen sisältö */}
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-orange-600">
+                  <h3 className={`font-bold text-orange-600 ${isLargeView ? "text-3xl" : "text-lg"}`}>
                     {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
                   </h3>
-                  <p className="text-gray-600 font-semibold underline">{translateDetails(room.details, language)}</p>
-                  <p className="flex items-center text-sm text-gray-700">
-                    <FontAwesomeIcon icon={faBuilding} className="mr-2 text-gray-500" />
+
+                  <p className={`text-gray-600 font-semibold underline ${isLargeView ? "text-xl" : "text-sm"}`}>
+                    {translateDetails(room.details, language)}
+                  </p>
+
+                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-xl" : "text-sm"}`}>
+                    <FontAwesomeIcon icon={faBuilding} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {language === "fi" ? "Kerros" : "Floor"} {room.floor} | {room.wing || "?"}
                   </p>
-                  <p className="flex items-center text-sm text-gray-700">
-                    <FontAwesomeIcon icon={faUsers} className="mr-2 text-gray-500" />
+
+                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-xl" : "text-sm"}`}>
+                    <FontAwesomeIcon icon={faUsers} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {room.persons || "?"} {language === "fi" ? "henkilöä" : "persons"}
                   </p>
-                  <p className="flex items-center text-sm text-gray-700">
-                    <FontAwesomeIcon icon={faRulerCombined} className="mr-2 text-gray-500" />
+
+                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-xl" : "text-sm"}`}>
+                    <FontAwesomeIcon icon={faRulerCombined} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {room.squareMeters || "0"} m²
                   </p>
+
                   {!roomReserved && (
-                    <p className={`flex items-center font-bold ${room.nextReservation ? "text-orange-500" : "text-green-600"}`}>
-                      <FontAwesomeIcon icon={faClock} className="mr-2" />
+                    <p className={`flex items-center font-bold ${room.nextReservation ? "text-orange-500" : "text-green-600"} ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                      <FontAwesomeIcon icon={faClock} className={`mr-2 ${isLargeView ? "text-xl" : ""}`} />
                       {room.nextReservation
                         ? language === "fi"
                           ? `Vapaa klo ${new Date(room.nextReservation.startDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} asti`
@@ -157,29 +165,27 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                     </p>
                   )}
 
-                  {/* Reservability Icons - Vertically Aligned */}
+                  {/* Varausikonit */}
                   <div className="flex flex-col items-start mt-3">
                     {room.reservableStaff === "true" && (
-                      <span className="flex items-center text-sm text-metropoliaGreen font-semibold">
-                        <FontAwesomeIcon icon={faUserTie} className="mr-2 text-metropoliaGreen text-lg" />
+                      <span className={`flex items-center font-semibold text-metropoliaGreen ${isLargeView ? "text-xl" : "text-sm"}`}>
+                        <FontAwesomeIcon icon={faUserTie} className={`mr-2 text-metropoliaGreen ${isLargeView ? "text-xl" : "text-lg"}`} />
                         {language === "fi" ? "Henkilökunta" : "Staff"}
                       </span>
                     )}
-
                     {room.reservableStudents === "true" && (
-                      <span className="flex items-center text-sm text-metropoliaRed font-semibold mt-2">
-                        <FontAwesomeIcon icon={faUserGraduate} className="mr-2 text-metropoliaRed text-lg" />
+                      <span className={`flex items-center font-semibold text-metropoliaRed mt-2 ${isLargeView ? "text-xl" : "text-sm"}`}>
+                        <FontAwesomeIcon icon={faUserGraduate} className={`mr-2 text-metropoliaRed ${isLargeView ? "text-xl" : "text-lg"}`} />
                         {language === "fi" ? "Opiskelijat" : "Students"}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Right Side - Image & QR Code */}
-
-                <div className="flex flex-col justify-between items-center sm:ml-4 flex-shrink-0 w-full sm:w-[140px] h-full">
+                {/* Oikea puoli: kuva ja QR */}
+                <div className={`flex flex-col justify-between items-center sm:ml-4 flex-shrink-0 w-full ${isLargeView ? "sm:w-[180px]" : "sm:w-[140px]"} h-full`}>
                   {roomImage && (
-                    <div className="w-[190px] aspect-[4/3] rounded-md overflow-hidden bg-gray-100">
+                    <div className={`${isLargeView ? "w-[240px]" : "w-[190px]"} aspect-[4/3] rounded-md overflow-hidden bg-gray-100`}>
                       <img
                         src={roomImage}
                         className="w-full h-full object-cover rounded-md translate-x-[-35px]"
@@ -191,7 +197,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                     <a href={generateTuudoLink(room.roomNumber)} target="_blank" rel="noopener noreferrer">
                       <QRCodeSVG
                         value={generateTuudoLink(room.roomNumber)}
-                        size={110}
+                        size={isLargeView ? 160 : 110}
                         className="border border-gray-200 rounded-md shadow-sm"
                       />
                     </a>

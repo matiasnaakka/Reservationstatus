@@ -1,41 +1,50 @@
 import { useEffect } from "react";
 
-const useAutoScroll = (ref, enabled, speed = 25) => { // Increased speed to 100
+const useAutoScroll = (ref, enabled, speed = 25) => {
   useEffect(() => {
-    if (!enabled) {
-      return; // Stop if autoScroll=false
-    }
-
-    const element = ref.current;
-    if (!element) {
-      return;
-    }
-
     let animationFrameId;
-    let lastTime = 0;
-    const scrollStep = 1;
 
-    const smoothScroll = (time) => {
-      if (!enabled || !element) return; // Stop if disabled
+    const startAutoScroll = () => {
+      const element = ref.current;
+      if (!element || !enabled) return;
 
-      if (time - lastTime > speed) {
-        if (element.scrollTop + element.clientHeight >= element.scrollHeight) {
-          element.scrollTop = 0;
-        } else {
-          element.scrollTop += scrollStep;
+      const hasOverflow = element.scrollHeight > element.clientHeight;
+      if (!hasOverflow) return;
+
+      let lastTime = 0;
+      const scrollStep = 1;
+
+      const smoothScroll = (time) => {
+        if (!enabled || !element) return;
+
+        if (time - lastTime > speed) {
+          const bottomThreshold = 2;
+          const scrolledToBottom =
+            Math.ceil(element.scrollTop + element.clientHeight + bottomThreshold) >= element.scrollHeight;
+
+          if (scrolledToBottom) {
+            element.scrollTop = 0;
+          } else {
+            element.scrollTop += scrollStep;
+          }
+          lastTime = time;
         }
-        lastTime = time;
-      }
+
+        animationFrameId = requestAnimationFrame(smoothScroll);
+      };
 
       animationFrameId = requestAnimationFrame(smoothScroll);
     };
 
-    animationFrameId = requestAnimationFrame(smoothScroll);
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(startAutoScroll);
+    }, 50);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      clearTimeout(timeoutId);
     };
   }, [ref, enabled, speed]);
 };
 
-export  {useAutoScroll};
+export { useAutoScroll };

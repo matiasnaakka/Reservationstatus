@@ -7,6 +7,8 @@ const RoomMap = lazy(() => import("./components/RoomMap"));
 const Instructions = lazy(() => import("./components/instructions"));
 import { isRoomReserved } from "./components/RoomList";
 
+import porausVideo from "./assets/Poraus.mp4";
+
 const getInitialScreen = () => {
   const stored = sessionStorage.getItem("currentLoopScreen");
   return stored || "roomList";
@@ -248,8 +250,8 @@ const App = () => {
   }, [selectedFloor, reservableStudents, reservableStaff]); // 🔥 Varmista, että useEffect kutsuu API:ta vain tarpeen mukaan
 
   const loopRoomTime = 20;
-  const loopMapTime = 10;
-  const loopFeedbackTime = 10;
+  const loopMapTime = 2;
+  const loopFeedbackTime = 2;
 
   useEffect(() => {
     if (!loopMode) return;
@@ -349,9 +351,26 @@ const App = () => {
 
       {/* ✅ Fullscreen Feedback Screen Mode (Only if loopMode=true) */}
       {loopMode && showFeedbackScreen ? (
-        <div className="absolute inset-0 font-sans flex justify-center items-center bg-white transition-opacity duration-1000">
+        <div className="absolute inset-0 font-sans flex justify-center items-center transition-opacity duration-1000 overflow-hidden">
+
+          {/* 🔥 Paikallinen taustavideo */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover z-0 brightness-75"
+          >
+            <source src={porausVideo} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+
+          {/* 🔲 Tummennuskerros */}
+          <div className="absolute inset-0 bg-black bg-opacity-40 z-[1]" />
+
+          {/* 🔸 Palautesisältö */}
           <div
-            className={`flex flex-col items-center text-center px-4 transition-all duration-500 ${isLargeCountdown ? "max-w-4xl scale-110" : "max-w-2xl"
+            className={`flex flex-col items-center text-center px-4 transition-all duration-500 z-10 ${isLargeCountdown ? "max-w-4xl scale-110" : "max-w-2xl"
               }`}
           >
             <div className={`${isLargeCountdown ? "w-[500px]" : "w-96"} lg:w-96`}>
@@ -361,18 +380,21 @@ const App = () => {
                 className="w-full transform transition-all duration-300 animate-bounce"
               />
             </div>
+
             <h2
               className={`mt-8 mb-4 font-heading font-bold text-orange-500 transition-opacity duration-300 ${isLargeCountdown ? "text-5xl" : "text-4xl"
                 }`}
             >
               Heräsikö päässäsi kehitysehdotuksia?
             </h2>
+
             <p
-              className={`mb-6 font-body text-gray-600 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
+              className={`mb-6 font-body text-gray-100 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
                 }`}
             >
               Skannaa QR-koodi kerro niistä meille.
             </p>
+
             <div className="relative">
               <img
                 alt="Feedback Form QR Code"
@@ -381,8 +403,9 @@ const App = () => {
                 src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://docs.google.com/forms/d/e/1FAIpQLSdk-MbIeGFiI_sMFYiY_1QmlV_CiIUBZeovlATbKX5mNDnv_g/viewform?usp=dialog"
               />
             </div>
+
             <p
-              className={`mt-6 font-body text-gray-500 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
+              className={`mt-6 font-body text-gray-200 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
                 }`}
             >
               Terveisin Matias
@@ -472,7 +495,8 @@ const App = () => {
                   autoScroll={autoScroll}
                   reservableStudents={reservableStudents}
                   reservableStaff={reservableStaff}
-                  showMap={!showFree && selectedFloor && !loopMode} // ✅ Pass showMap state
+                  showMap={!showFree && selectedFloor && !loopMode}
+                  isLargeView={isLargeCountdown} // ⬅️ tämä lisätään
                 />
               </Suspense>
             )}
