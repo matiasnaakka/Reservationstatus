@@ -3,66 +3,59 @@ import InlineSVG from "react-inlinesvg";
 import Floor7SVG from "../assets/7thfloormap.svg";
 import Floor6SVG from "../assets/6thfloormap.svg";
 import Floor5SVG from "../assets/5thfloormap.svg";
+import { isRoomReserved } from "./RoomList"; // ✅ Importoidaan oikea logiikka
 
 const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
   const svgRef = useRef(null);
   const [svgLoaded, setSvgLoaded] = useState(false);
 
-  // ✅ Function to update room colors
+  // Function to update room colors
   const updateRoomColors = () => {
     if (!svgRef.current || !svgLoaded) return;
 
-    // ✅ Rooms that should always be yellow (5th floor)
+    // ✅ Huoneet, jotka halutaan pitää aina keltaisina
     const alwaysYellowRooms = ["KMC550", "KMC590"];
 
     const filterByStaff = reservableFilter === "staff";
     const filterByStudents = reservableFilter === "students";
 
-    // 🔹 Loop through API rooms and apply colors
     rooms.forEach((room) => {
       const normalizedId = room.roomNumber.replace(/\./g, "\\.");
       const roomElement = svgRef.current.querySelector(`#${normalizedId}`);
 
       if (roomElement) {
+        let roomColor = "#4caf50"; // Oletus: vihreä (vapaa)
 
-        let roomColor = "#4caf50"; // Default: Green (Free)
-
-        if (room.reserved) {
-          roomColor = "#f44336"; // 🔴 Reserved (Red)
-        } else if (filterByStaff) {
-          roomColor = room.reserved ? "#f44336" : "#4caf50";
-        } else if (filterByStudents) {
-          roomColor = room.reservableStudents === "true" ? "#4caf50" : "#ffeb3b";
+        // ✅ Jos huone on manuaalisesti määritelty keltaiseksi
+        if (alwaysYellowRooms.includes(room.roomNumber)) {
+          roomColor = "#ffeb3b"; // Keltainen
+        }
+        // ✅ Jos huone on oikeasti varattu nyt
+        else if (isRoomReserved(room)) {
+          roomColor = "#f44336"; // Punainen
+        }
+        // ✅ Jos suodatetaan opiskelijatilat
+        else if (filterByStudents && room.reservableStudents !== "true") {
+          roomColor = "#ffeb3b"; // Keltainen, ei varattavissa opiskelijalle
+        }
+        // ✅ Jos suodatetaan henkilökunnalle
+        else if (filterByStaff && room.reservableStaff !== "true") {
+          roomColor = "#ffeb3b"; // Keltainen, ei varattavissa henkilökunnalle
         }
 
-        // ✅ Apply color
         roomElement.setAttribute("fill", roomColor);
       } else {
-        console.warn(`🚨 No SVG element found for room: ${room.roomNumber}`);
+        console.warn(`⚠️ No SVG element found for room: ${room.roomNumber}`);
       }
     });
-
-    // 🟡 **Manually Color Missing Rooms (5th Floor)**
-    if (selectedFloor === "5") {
-      alwaysYellowRooms.forEach((roomId) => {
-        const roomElement = svgRef.current.querySelector(`#${roomId}`);
-        if (roomElement) {
-          console.log(`✅ Forcing yellow for: ${roomId}`);
-          roomElement.setAttribute("fill", "#ffeb3b"); // 🟡 Yellow
-        } else {
-          console.warn(`🚨 No SVG element found for: ${roomId} in the SVG!`);
-        }
-      });
-    }
   };
 
   useEffect(() => {
     if (svgLoaded) {
-      setTimeout(updateRoomColors, 500); // ✅ Ensure SVG is fully loaded before modifying
+      setTimeout(updateRoomColors, 500); // Odota hetki, että SVG latautuu kokonaan
     }
-  }, [rooms, selectedFloor, svgLoaded, reservableFilter]); // ✅ Added reservableFilter  
+  }, [rooms, selectedFloor, svgLoaded, reservableFilter]);
 
-  // ✅ Function to get the correct floor SVG
   const getFloorSVG = () => {
     switch (selectedFloor) {
       case "5":
@@ -90,7 +83,7 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        overflow: "hidden",  // ✅ Prevent scrolling
+        overflow: "hidden",
         position: "relative",
       }}
     >
@@ -100,13 +93,13 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
         innerRef={svgRef}
         style={{
           width: "100%",
-          height: "100%",  // ✅ Ensure it takes full height
-          maxHeight: "100vh",  // ✅ Prevent overflow
+          height: "100%",
+          maxHeight: "100vh",
           objectFit: "contain",
         }}
       />
     </div>
-  );  
+  );
 };
 
 export default RoomMap;
