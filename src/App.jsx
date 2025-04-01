@@ -250,8 +250,8 @@ const App = () => {
   }, [selectedFloor, reservableStudents, reservableStaff]); // 🔥 Varmista, että useEffect kutsuu API:ta vain tarpeen mukaan
 
   const loopRoomTime = 20;
-  const loopMapTime = 2;
-  const loopFeedbackTime = 2;
+  const loopMapTime = 5;
+  const loopFeedbackTime = 10;
 
   useEffect(() => {
     if (!loopMode) return;
