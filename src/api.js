@@ -5,7 +5,7 @@ const API_KEY = import.meta.env.VITE_API_KEY;
 
 export const fetchAllRooms = async (floor, startDate, endDate) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/rooms/freespace`, {
+    const response = await axios.get(`${API_BASE_URL}/api/rooms/freespace-full`, {
       headers: { apikey: API_KEY },
       params: {
         floor,
