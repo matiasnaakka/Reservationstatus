@@ -1,50 +1,59 @@
 import { useEffect } from "react";
 
-const useAutoScroll = (ref, enabled, speed = 25) => {
+/**
+ * @param {React.RefObject} ref - scrollattava elementti
+ * @param {boolean} enabled - onko scrollaus päällä
+ * @param {number} speed - aika millisekunteina (setInterval) tai viive scroll-askeleeseen (rAF)
+ * @param {boolean} useRAF - käytetäänkö requestAnimationFrame vai setInterval (default: true)
+ */
+const useAutoScroll = (ref, enabled, speed = 25, useRAF = true) => {
   useEffect(() => {
+    const element = ref.current;
+    if (!element || !enabled) return;
+
+    const scrollStep = 1;
+    const bottomThreshold = 2;
+
     let animationFrameId;
+    let intervalId;
 
-    const startAutoScroll = () => {
-      const element = ref.current;
-      if (!element || !enabled) return;
+    const scroll = () => {
+      if (!element) return;
 
-      const hasOverflow = element.scrollHeight > element.clientHeight;
-      if (!hasOverflow) return;
+      const scrolledToBottom =
+        Math.ceil(element.scrollTop + element.clientHeight + bottomThreshold) >= element.scrollHeight;
 
+      if (scrolledToBottom) {
+        element.scrollTop = 0;
+      } else {
+        element.scrollTop += scrollStep;
+      }
+    };
+
+    if (useRAF) {
       let lastTime = 0;
-      const scrollStep = 1;
-
       const smoothScroll = (time) => {
         if (!enabled || !element) return;
 
         if (time - lastTime > speed) {
-          const bottomThreshold = 2;
-          const scrolledToBottom =
-            Math.ceil(element.scrollTop + element.clientHeight + bottomThreshold) >= element.scrollHeight;
-
-          if (scrolledToBottom) {
-            element.scrollTop = 0;
-          } else {
-            element.scrollTop += scrollStep;
-          }
+          scroll();
           lastTime = time;
         }
 
         animationFrameId = requestAnimationFrame(smoothScroll);
       };
-
       animationFrameId = requestAnimationFrame(smoothScroll);
-    };
-
-    const timeoutId = setTimeout(() => {
-      requestAnimationFrame(startAutoScroll);
-    }, 50);
+    } else {
+      intervalId = setInterval(() => {
+        if (enabled && element) scroll();
+      }, speed);
+    }
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
-      clearTimeout(timeoutId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (intervalId) clearInterval(intervalId);
     };
-  }, [ref, enabled, speed]);
+  }, [ref, enabled, speed, useRAF]);
 };
 
 export { useAutoScroll };

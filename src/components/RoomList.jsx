@@ -23,7 +23,7 @@ const detailsTranslations = {
   "VR/AR -laboratorio": { en: "VR/AR Laboratory", fi: "VR/AR -laboratorio" },
   "Ryhmätyötila": { en: "Group Workspace", fi: "Ryhmätyötila" },
 };
-
+console.log("Morrow");
 // Helper function for translating room types
 const translateDetails = (details, language) =>
   detailsTranslations[details]?.[language] || details;
@@ -113,7 +113,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
   return (
     <div ref={scrollRef}
       className="overflow-auto h-full w-full"
-      style={{ scrollBehavior: "smooth", maxHeight: "90vh", willChange: "transform, scroll-position" }}>
+      style={{ scrollBehavior: "auto", maxHeight: "90vh", willChange: "transform, scroll-position", transform: "translateZ(0)", }}>
 
 
       <div className={`grid gap-6 ${isLargeView ? "grid-cols-2" : showMap ? "grid-cols-4" : "room-grid"}`}>
