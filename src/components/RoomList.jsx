@@ -78,7 +78,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
   const scrollRef = useRef(null);
 
   useKinectScroll(scrollRef);
-  useAutoScroll(scrollRef, autoScroll, 40); // Use the optimized hook
+  useAutoScroll(scrollRef, autoScroll, 25); // Use the optimized hook
   const excludedRoomNumbers = ["KMC590", "KMD558", "KMD590", "KMC501", "KMD616", "KMD716", "KMC591"];
 
   const filteredRooms = useMemo(() => {
