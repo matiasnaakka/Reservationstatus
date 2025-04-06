@@ -398,7 +398,7 @@ const App = () => {
               className={`mt-8 mb-4 font-heading font-bold text-orange-500 transition-opacity duration-300 ${isLargeCountdown ? "text-5xl" : "text-4xl"
                 }`}
             >
-              Heräsikö päässäsi kehitysehdotuksia?
+              Heräsikö kehitysehdotuksia?
             </h2>
 
             <p
@@ -441,14 +441,21 @@ const App = () => {
             <div className="flex items-center space-x-4">
               {/* 🔹 Pääotsikko */}
               <h1 className={`font-title text-metropoliaOrange font-bold drop-shadow-lg flex items-center 
-    ${isLargeCountdown ? "text-6xl" : "text-4xl"}`}>
+  ${isLargeCountdown ? "text-6xl" : "text-4xl"}`}>
                 {`${translations[language].title} - ${selectedFloor === "all"
-                    ? language === "fi"
-                      ? "Kaikki kerrokset"
-                      : "All Floors"
-                    : `${language === "fi" ? "Kerros" : "Floor"} ${selectedFloor}`
+                  ? language === "fi"
+                    ? "Kaikki kerrokset"
+                    : "All Floors"
+                  : `${language === "fi" ? "Kerros" : "Floor"} ${selectedFloor}`
                   }`}
+                {reservableAudience && (
+                  <span className={`ml-4 text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm 
+      ${isLargeCountdown ? "text-2xl" : "text-lg"}`}>
+                    {reservableAudience}
+                  </span>
+                )}
               </h1>
+
 
               {/* 🔹 Ohjeet-nappi */}
               <div className="relative group">

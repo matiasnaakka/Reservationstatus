@@ -137,6 +137,10 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                     {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
                   </h3>
 
+                  <p className={`text-gray-600 font-semibold underline ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                    {translateDetails(room.details, language)}
+                  </p>
+
                   <p className={`flex items-center text-gray-700 ${isLargeView ? "text-2xl" : "text-sm"}`}>
                     <FontAwesomeIcon icon={faBuilding} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {language === "fi" ? "Kerros" : "Floor"} {room.floor} | {room.wing || "?"}
@@ -150,10 +154,6 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                   <p className={`flex items-center text-gray-700 ${isLargeView ? "text-2xl" : "text-sm"}`}>
                     <FontAwesomeIcon icon={faRulerCombined} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {room.squareMeters || "0"} m²
-                  </p>
-
-                  <p className={`text-gray-600 font-semibold underline ${isLargeView ? "text-2xl" : "text-sm"}`}>
-                    {translateDetails(room.details, language)}
                   </p>
 
                   {!roomReserved && (
