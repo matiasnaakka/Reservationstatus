@@ -1,12 +1,6 @@
 import { useEffect } from "react";
 
-/**
- * @param {React.RefObject} ref - scrollattava elementti
- * @param {boolean} enabled - onko scrollaus päällä
- * @param {number} speed - aika millisekunteina (setInterval) tai viive scroll-askeleeseen (rAF)
- * @param {boolean} useRAF - käytetäänkö requestAnimationFrame vai setInterval (default: true)
- */
-const useAutoScroll = (ref, enabled, speed = 25, useRAF = true) => {
+export const useAutoScroll = (ref, enabled, speed = 25, useRAF = true) => {
   useEffect(() => {
     const element = ref.current;
     if (!element || !enabled) return;
@@ -15,45 +9,65 @@ const useAutoScroll = (ref, enabled, speed = 25, useRAF = true) => {
     const bottomThreshold = 2;
 
     let animationFrameId;
-    let intervalId;
+    let scrollDirection = "down";
+    let paused = false;
 
-    const scroll = () => {
+    const pause = (duration) =>
+      new Promise((resolve) => setTimeout(resolve, duration));
+
+    const scroll = async () => {
       if (!element) return;
 
-      const scrolledToBottom =
-        Math.ceil(element.scrollTop + element.clientHeight + bottomThreshold) >= element.scrollHeight;
+      while (enabled) {
+        if (paused) {
+          await pause(500); // Just wait while paused
+          continue;
+        }
 
-      if (scrolledToBottom) {
-        element.scrollTop = 0;
-      } else {
-        element.scrollTop += scrollStep;
+        const atBottom =
+          Math.ceil(element.scrollTop + element.clientHeight + bottomThreshold) >=
+          element.scrollHeight;
+        const atTop = element.scrollTop <= 0;
+
+        if (scrollDirection === "down") {
+          if (!atBottom) {
+            element.scrollTop += scrollStep;
+          } else {
+            paused = true;
+            await pause(2000); // Pause at bottom
+            scrollDirection = "up";
+            paused = false;
+          }
+        } else {
+          if (!atTop) {
+            element.scrollTop -= scrollStep;
+          } else {
+            paused = true;
+            await pause(2000); // Pause at top
+            scrollDirection = "down";
+            paused = false;
+          }
+        }
+
+        await pause(speed);
       }
     };
 
     if (useRAF) {
-      let lastTime = 0;
-      const smoothScroll = (time) => {
-        if (!enabled || !element) return;
-
-        if (time - lastTime > speed) {
-          scroll();
-          lastTime = time;
-        }
-
-        animationFrameId = requestAnimationFrame(smoothScroll);
+      let running = true;
+      const loop = async () => {
+        await scroll();
+        if (running) animationFrameId = requestAnimationFrame(loop);
       };
-      animationFrameId = requestAnimationFrame(smoothScroll);
-    } else {
-      intervalId = setInterval(() => {
-        if (enabled && element) scroll();
-      }, speed);
-    }
+      animationFrameId = requestAnimationFrame(loop);
 
-    return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
-      if (intervalId) clearInterval(intervalId);
-    };
+      return () => {
+        running = false;
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      };
+    } else {
+      let intervalId = setInterval(scroll, speed);
+      return () => clearInterval(intervalId);
+    }
   }, [ref, enabled, speed, useRAF]);
 };
-
-export { useAutoScroll };

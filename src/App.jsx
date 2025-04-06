@@ -32,8 +32,10 @@ const App = () => {
   const reservableStaffFilter = reservableFilterFromURL === "staff";
   // ✅ Define floorFromURL before using it
   const floorFromURL = searchParams.get("floor") || "all";
+  const floorMapParam = searchParams.get("floorMap");
 
   // ✅ Add new state for filtering by staff
+  const [floorMapInLoop, setFloorMapInLoop] = useState(floorMapParam || "5");
   const [reservableStudents, setReservableStudents] = useState(reservableStudentsFilter);
   const [reservableStaff, setReservableStaff] = useState(reservableStaffFilter);
   const [selectedFloor, setSelectedFloor] = useState(floorFromURL);
@@ -58,15 +60,17 @@ const App = () => {
   const floors = ["2", "5", "6", "7"];
 
   const reservableAudience =
-    selectedFloor !== "all" && (reservableStudents || reservableStaff)
-      ? reservableStudents
-        ? language === "en"
-          ? "Reservable for Students"
-          : "Varattavissa opiskelijoille"
-        : language === "en"
-          ? "Reservable for Staff"
-          : "Varattavissa henkilökunnalle"
-      : ""; // Hide when no filters are applied
+  (reservableStudents || reservableStaff)
+    ? reservableStudents
+      ? language === "en"
+        ? "Reservable for Students"
+        : "Varattavissa opiskelijoille"
+      : language === "en"
+        ? "Reservable for Staff"
+        : "Varattavissa henkilökunnalle"
+    : "";
+
+
 
   const translations = {
     en: {
@@ -167,17 +171,20 @@ const App = () => {
         return room;
       });
 
+      const excludedRoomNumbers = ["KMC590", "KMD558", "KMD590", "KMC501", "KMD616", "KMD716", "KMC591"];
+
       const filteredRoomCards = allRooms.filter(room =>
         !isRoomReserved(room) &&
+        !excludedRoomNumbers.includes(room.roomNumber) &&
         (
           (!reservableStudents && !reservableStaff) ||
           (reservableStudents &&
             room.reservableStudents === "true" &&
-            (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila") // ✅ Only allow these rooms
+            (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila")
           ) ||
           (reservableStaff &&
             room.reservableStaff === "true" &&
-            room.details === "Henkilöstön työtila") // ✅ Only allow staff workspaces
+            room.details === "Henkilöstön työtila")
         )
       );
 
@@ -250,8 +257,8 @@ const App = () => {
   }, [selectedFloor, reservableStudents, reservableStaff]); // 🔥 Varmista, että useEffect kutsuu API:ta vain tarpeen mukaan
 
   const loopRoomTime = 20;
-  const loopMapTime = 10;
-  const loopFeedbackTime = 15;
+  const loopMapTime = 2;
+  const loopFeedbackTime = 2;
 
   useEffect(() => {
     if (!loopMode) return;
@@ -314,7 +321,7 @@ const App = () => {
 
   useEffect(() => {
     const checkResolution = () => {
-      const isTargetSize = window.innerWidth === 1080 && window.innerHeight === 1980;
+      const isTargetSize = window.innerWidth >= 1080 && window.innerHeight >= 1980 && window.innerHeight > window.innerWidth;
       setIsLargeCountdown(isTargetSize);
     };
 
@@ -322,6 +329,11 @@ const App = () => {
     window.addEventListener("resize", checkResolution);
     return () => window.removeEventListener("resize", checkResolution);
   }, []);
+
+  useEffect(() => {
+    const newFloorMap = searchParams.get("floorMap");
+    if (newFloorMap) setFloorMapInLoop(newFloorMap);
+  }, [searchParams]);  
 
   return (
 
@@ -417,7 +429,7 @@ const App = () => {
         <div className="absolute inset-0 flex justify-center items-center bg-white transition-opacity duration-1000">
           <div className="w-[90vw] h-[90vh] flex justify-center items-center">
             <Suspense fallback={<p className="text-center text-gray-500">Loading map...</p>}>
-              <RoomMap rooms={rooms} selectedFloor={selectedFloor} />
+            <RoomMap rooms={rooms} selectedFloor={loopMode ? floorMapInLoop : selectedFloor} />
             </Suspense>
           </div>
         </div>

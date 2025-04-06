@@ -78,22 +78,26 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
   const scrollRef = useRef(null);
 
   useKinectScroll(scrollRef);
-  useAutoScroll(scrollRef, autoScroll, 25); // Use the optimized hook
+  useAutoScroll(scrollRef, autoScroll, 40); // Use the optimized hook
+  const excludedRoomNumbers = ["KMC590", "KMD558", "KMD590", "KMC501", "KMD616", "KMD716", "KMC591"];
+
   const filteredRooms = useMemo(() => {
     return rooms.filter(room =>
       !isRoomReserved(room) &&
+      !excludedRoomNumbers.includes(room.roomNumber) &&
       (
         (!reservableStudents && !reservableStaff) ||
         (reservableStudents &&
           room.reservableStudents === "true" &&
-          (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila") // ✅ Show only these room types for students
+          (room.details === "Yhteistyötila" || room.details === "Ryhmätyötila")
         ) ||
         (reservableStaff &&
           room.reservableStaff === "true" &&
-          room.details === "Henkilöstön työtila") // ✅ Ensure only staff workspaces
+          room.details === "Henkilöstön työtila")
       )
     );
   }, [rooms, reservableStudents, reservableStaff]);
+
 
 
   const translateDetails = useCallback((details, language) => {
@@ -133,23 +137,23 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                     {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
                   </h3>
 
-                  <p className={`text-gray-600 font-semibold underline ${isLargeView ? "text-xl" : "text-sm"}`}>
-                    {translateDetails(room.details, language)}
-                  </p>
-
-                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-xl" : "text-sm"}`}>
+                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-2xl" : "text-sm"}`}>
                     <FontAwesomeIcon icon={faBuilding} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {language === "fi" ? "Kerros" : "Floor"} {room.floor} | {room.wing || "?"}
                   </p>
 
-                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-xl" : "text-sm"}`}>
+                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-2xl" : "text-sm"}`}>
                     <FontAwesomeIcon icon={faUsers} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {room.persons || "?"} {language === "fi" ? "henkilöä" : "persons"}
                   </p>
 
-                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-xl" : "text-sm"}`}>
+                  <p className={`flex items-center text-gray-700 ${isLargeView ? "text-2xl" : "text-sm"}`}>
                     <FontAwesomeIcon icon={faRulerCombined} className={`mr-2 text-gray-500 ${isLargeView ? "text-2xl" : ""}`} />
                     {room.squareMeters || "0"} m²
+                  </p>
+
+                  <p className={`text-gray-600 font-semibold underline ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                    {translateDetails(room.details, language)}
                   </p>
 
                   {!roomReserved && (
@@ -168,14 +172,14 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                   {/* Varausikonit */}
                   <div className="flex flex-col items-start mt-3">
                     {room.reservableStaff === "true" && (
-                      <span className={`flex items-center font-semibold text-metropoliaGreen ${isLargeView ? "text-xl" : "text-sm"}`}>
-                        <FontAwesomeIcon icon={faUserTie} className={`mr-2 text-metropoliaGreen ${isLargeView ? "text-xl" : "text-lg"}`} />
+                      <span className={`flex items-center font-semibold text-metropoliaGreen ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                        <FontAwesomeIcon icon={faUserTie} className={`mr-2 text-metropoliaGreen ${isLargeView ? "text-2xl" : "text-lg"}`} />
                         {language === "fi" ? "Henkilökunta" : "Staff"}
                       </span>
                     )}
                     {room.reservableStudents === "true" && (
-                      <span className={`flex items-center font-semibold text-metropoliaRed mt-2 ${isLargeView ? "text-xl" : "text-sm"}`}>
-                        <FontAwesomeIcon icon={faUserGraduate} className={`mr-2 text-metropoliaRed ${isLargeView ? "text-xl" : "text-lg"}`} />
+                      <span className={`flex items-center font-semibold text-metropoliaRed mt-2 ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                        <FontAwesomeIcon icon={faUserGraduate} className={`mr-2 text-metropoliaRed ${isLargeView ? "text-2xl" : "text-lg"}`} />
                         {language === "fi" ? "Opiskelijat" : "Students"}
                       </span>
                     )}
