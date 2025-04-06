@@ -34,6 +34,11 @@ const App = () => {
   const floorFromURL = searchParams.get("floor") || "all";
   const floorMapParam = searchParams.get("floorMap");
 
+  const loopRoomTime = parseInt(searchParams.get("loopRoomTime")) || 20;
+  const loopMapTime = parseInt(searchParams.get("loopMapTime")) || 3;
+  const loopFeedbackTime = parseInt(searchParams.get("loopFeedbackTime")) || 7;
+
+
   // ✅ Add new state for filtering by staff
   const [floorMapInLoop, setFloorMapInLoop] = useState(floorMapParam || "5");
   const [reservableStudents, setReservableStudents] = useState(reservableStudentsFilter);
@@ -60,15 +65,15 @@ const App = () => {
   const floors = ["2", "5", "6", "7"];
 
   const reservableAudience =
-  (reservableStudents || reservableStaff)
-    ? reservableStudents
-      ? language === "en"
-        ? "Reservable for Students"
-        : "Varattavissa opiskelijoille"
-      : language === "en"
-        ? "Reservable for Staff"
-        : "Varattavissa henkilökunnalle"
-    : "";
+    (reservableStudents || reservableStaff)
+      ? reservableStudents
+        ? language === "en"
+          ? "Reservable for Students"
+          : "Varattavissa opiskelijoille"
+        : language === "en"
+          ? "Reservable for Staff"
+          : "Varattavissa henkilökunnalle"
+      : "";
 
 
 
@@ -256,10 +261,6 @@ const App = () => {
     return () => clearInterval(interval);
   }, [selectedFloor, reservableStudents, reservableStaff]); // 🔥 Varmista, että useEffect kutsuu API:ta vain tarpeen mukaan
 
-  const loopRoomTime = 20;
-  const loopMapTime = 3;
-  const loopFeedbackTime = 7;
-
   useEffect(() => {
     if (!loopMode) return;
 
@@ -333,7 +334,7 @@ const App = () => {
   useEffect(() => {
     const newFloorMap = searchParams.get("floorMap");
     if (newFloorMap) setFloorMapInLoop(newFloorMap);
-  }, [searchParams]);  
+  }, [searchParams]);
 
   return (
 
@@ -429,7 +430,7 @@ const App = () => {
         <div className="absolute inset-0 flex justify-center items-center bg-white transition-opacity duration-1000">
           <div className="w-[90vw] h-[90vh] flex justify-center items-center">
             <Suspense fallback={<p className="text-center text-gray-500">Loading map...</p>}>
-            <RoomMap rooms={rooms} selectedFloor={loopMode ? floorMapInLoop : selectedFloor} />
+              <RoomMap rooms={rooms} selectedFloor={loopMode ? floorMapInLoop : selectedFloor} />
             </Suspense>
           </div>
         </div>
@@ -440,15 +441,13 @@ const App = () => {
             <div className="flex items-center space-x-4">
               {/* 🔹 Pääotsikko */}
               <h1 className={`font-title text-metropoliaOrange font-bold drop-shadow-lg flex items-center 
-  ${isLargeCountdown ? "text-6xl" : "text-4xl"}`}>
-
-                {translations[language].title}
-                {reservableAudience && (
-                  <span className={`ml-4 text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm 
-                    ${isLargeCountdown ? "text-2xl" : "text-lg"}`}>
-                    {reservableAudience}
-                  </span>
-                )}
+    ${isLargeCountdown ? "text-6xl" : "text-4xl"}`}>
+                {`${translations[language].title} - ${selectedFloor === "all"
+                    ? language === "fi"
+                      ? "Kaikki kerrokset"
+                      : "All Floors"
+                    : `${language === "fi" ? "Kerros" : "Floor"} ${selectedFloor}`
+                  }`}
               </h1>
 
               {/* 🔹 Ohjeet-nappi */}
