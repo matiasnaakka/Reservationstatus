@@ -52,9 +52,11 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
 
   useEffect(() => {
     if (svgLoaded) {
-      setTimeout(updateRoomColors, 500); // Odota hetki, että SVG latautuu kokonaan
+      const frame = requestAnimationFrame(() => updateRoomColors());
+      return () => cancelAnimationFrame(frame);
     }
   }, [rooms, selectedFloor, svgLoaded, reservableFilter]);
+
 
   const getFloorSVG = () => {
     switch (selectedFloor) {

@@ -129,7 +129,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
 
           return (
             <div key={room.roomNumber} className={`${isLargeView ? "w-[500px] h-[400px]" : "w-[325px] h-[280px]"} p-1`}> {/* <-- padding antaa varjolle tilaa */}
-              <div className={`w-full h-full room-card bg-gradient-to-br from-white via-gray-100 to-gray-100 shadow-lg rounded-2xl ring-1 ring-gray-100 flex flex-row transition-transform duration-300 p-3 ${isLargeView ? "shadow-2xl" : ""}
+              <div className={`w-full h-full room-card bg-gradient-to-br from-white via-gray-100 to-gray-100 shadow-lg rounded-2xl ring-1 ring-gray-100 flex flex-row p-3 ${isLargeView ? "shadow-2xl" : ""}
 }`}>
                 {/* Vasemman puolen sisältö */}
                 <div className="flex-1">
