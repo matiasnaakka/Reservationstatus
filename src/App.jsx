@@ -355,7 +355,7 @@ const App = () => {
           </div>
 
           {/* Ajan laskuri oikealla */}
-          <div className={`flex items-center justify-center bg-white text-black rounded-full font-extrabold shadow-md animate-bounce
+          <div className={`flex items-center justify-center bg-white text-black rounded-full font-extrabold shadow-md
       ${isLargeCountdown ? "w-24 h-24 text-5xl" : "w-12 h-12 text-xl"}`}>
             {timeLeft}
           </div>
@@ -388,9 +388,10 @@ const App = () => {
           >
             <div className={`${isLargeCountdown ? "w-[500px]" : "w-96"} lg:w-96`}>
               <img
+                loading="lazy"
                 src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3U2NWptcHI2ZXhxZm9wdnRsNWxkczNucTcwZDU5NGsxZzltZ253NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/R59Hhh3cnfuffSSAxP/giphy.gif"
                 alt="Animated Thumbs Up"
-                className="w-full transform transition-all duration-300 animate-bounce"
+                className="w-full transform transition-all duration-300"
               />
             </div>
 
@@ -410,6 +411,7 @@ const App = () => {
 
             <div className="relative">
               <img
+                loading="lazy"
                 alt="Feedback Form QR Code"
                 className={`rounded-lg shadow-lg transition-all ${isLargeCountdown ? "h-56 w-56" : "h-40 w-40"
                   }`}

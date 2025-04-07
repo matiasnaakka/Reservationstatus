@@ -9,26 +9,19 @@ const useKinectScroll = (scrollContainerRef, { throttleTime = 1 } = {}) => {
     const connectWebSocket = () => {
       wsRef.current = new WebSocket("ws://localhost:8080");
 
-      wsRef.current.onopen = () => console.log("✅ Connected to Kinect WebSocket");
+      wsRef.current.onopen = () =>
 
       wsRef.current.onmessage = (event) => {
         try {
           const { rightHand } = JSON.parse(event.data);
-          console.log(`📡 Received WebSocket Data:`, event.data);
-
           if (!scrollContainerRef.current) return;
-
           const scrollAmount = 10; // Reduced step size for smoother movement
           let targetScrollY = lastScrollY.current;
-
           if (rightHand <= 2.4) {
-            console.log("⬇️ Scrolling Down");
             targetScrollY += scrollAmount;
           } else if (rightHand >= 4.0) {
-            console.log("⬆️ Scrolling Up");
             targetScrollY -= scrollAmount;
           }
-
           // Use requestAnimationFrame for smoother scrolling
           if (!animationFrameRef.current) {
             animationFrameRef.current = requestAnimationFrame(() => {
@@ -45,7 +38,6 @@ const useKinectScroll = (scrollContainerRef, { throttleTime = 1 } = {}) => {
       wsRef.current.onerror = (error) => console.error("❌ WebSocket error:", error);
 
       wsRef.current.onclose = () => {
-        console.log("❌ WebSocket closed, attempting reconnect...");
         setTimeout(() => {
           if (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED) {
             connectWebSocket(); // Reconnect WebSocket
