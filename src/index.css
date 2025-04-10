@@ -36,15 +36,14 @@ html, body, #root {
   margin-top: 1rem;
 }
 
-/* Smaller room cards */
 .room-card {
-  padding: 0.5rem; /* Smaller padding */
-  font-size: 0.9rem; /* Smaller font size */
-  border-radius: 4px; /* Slightly rounded corners */
+  padding: 0.75rem; /* Increased padding */
+  font-size: 1rem; /* Larger font size */
+  border-radius: 8px; /* More rounded corners */
 }
 
 .room-card p {
-  margin: 0.5rem 0; /* Reduce spacing between paragraphs */
+  margin: 0.5rem 0; /* Slightly more spacing */
 }
 
 .room-card {
