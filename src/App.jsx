@@ -396,7 +396,7 @@ const App = () => {
             </div>
 
             <h2
-              className={`mt-8 mb-4 font-heading font-bold text-orange-500 transition-opacity duration-300 ${isLargeCountdown ? "text-5xl" : "text-4xl"
+              className={`font-title mt-8 mb-4 font-heading font-bold text-orange-500 transition-opacity duration-300 ${isLargeCountdown ? "text-5xl" : "text-4xl"
                 }`}
             >
               Heräsikö kehitysehdotuksia?
@@ -455,7 +455,7 @@ const App = () => {
                   : `${language === "fi" ? "Kerros" : "Floor"} ${selectedFloor}`
                   }`}
                 {reservableAudience && (
-                  <span className={`ml-4 text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm 
+                  <span className={`ml-4 font-title text-gray-600 bg-gray-200 px-3 py-1 rounded-md shadow-sm 
       ${isLargeCountdown ? "text-2xl" : "text-lg"}`}>
                     {reservableAudience}
                   </span>

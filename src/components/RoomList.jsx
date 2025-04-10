@@ -133,7 +133,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
 }`}>
                 {/* Vasemman puolen sisältö */}
                 <div className="flex-1">
-                  <h3 className={`font-bold text-orange-600 ${isLargeView ? "text-3xl" : "text-lg"}`}>
+                  <h3 className={`font-title font-bold text-orange-600 ${isLargeView ? "text-3xl" : "text-lg"}`}>
                     {room.roomNumber || (language === "fi" ? "Nimetön huone" : "Unnamed Room")}
                   </h3>
 
