@@ -178,8 +178,8 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                       </span>
                     )}
                     {room.reservableStudents === "true" && (
-                      <span className={`flex items-center font-semibold text-blue-900 mt-2 ${isLargeView ? "text-2xl" : "text-sm"}`}>
-                        <FontAwesomeIcon icon={faUserGraduate} className={`mr-2 text-blue-900 ${isLargeView ? "text-2xl" : "text-lg"}`} />
+                      <span className={`flex items-center font-semibold text-metropoliaRed mt-2 ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                        <FontAwesomeIcon icon={faUserGraduate} className={`mr-2 text-metropoliaRed ${isLargeView ? "text-2xl" : "text-lg"}`} />
                         {language === "fi" ? "Opiskelijat" : "Students"}
                       </span>
                     )}

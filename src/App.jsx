@@ -34,9 +34,9 @@ const App = () => {
   const floorFromURL = searchParams.get("floor") || "all";
   const floorMapParam = searchParams.get("floorMap");
 
-  const loopRoomTime = parseInt(searchParams.get("loopRoomTime")) || 20;
-  const loopMapTime = parseInt(searchParams.get("loopMapTime")) || 3;
-  const loopFeedbackTime = parseInt(searchParams.get("loopFeedbackTime")) || 7;
+  const loopRoomTime = parseInt(searchParams.get("loopRoomTime")) || 20; //20
+  const loopMapTime = parseInt(searchParams.get("loopMapTime")) || 3; //3
+  const loopFeedbackTime = parseInt(searchParams.get("loopFeedbackTime")) || 7; //7
 
 
   // ✅ Add new state for filtering by staff
@@ -342,21 +342,21 @@ const App = () => {
       {/* ✅ Countdown Banner (Only if loopMode is active) */}
       {loopMode && (
         <div className={`absolute bottom-4 right-4 bg-black bg-opacity-80 text-white font-bold rounded-xl shadow-lg transition-all duration-500 ease-in-out transform z-[9999] flex items-center space-x-4
-    ${isLargeCountdown ? "px-10 py-6" : "px-6 py-3"}`}>
+    ${isLargeCountdown ? "px-10 py-6" : "px-10 py-3"}`}>
 
           {/* Tekstit vasemmalla */}
           <div className="text-right">
-            <p className={`tracking-wide opacity-80 ${isLargeCountdown ? "text-2xl" : "text-sm"}`}>
+            <p className={`tracking-wide opacity-80 ${isLargeCountdown ? "text-2xl" : "text-xl"}`}>
               {translations[language].nextScreen}
             </p>
-            <p className={`${isLargeCountdown ? "text-3xl" : "text-lg"} font-extrabold tracking-widest`}>
+            <p className={`${isLargeCountdown ? "text-3xl" : "text-2xl"} font-extrabold tracking-widest`}>
               {nextScreen}
             </p>
           </div>
 
           {/* Ajan laskuri oikealla */}
           <div className={`flex items-center justify-center bg-white text-black rounded-full font-extrabold shadow-md
-      ${isLargeCountdown ? "w-24 h-24 text-5xl" : "w-12 h-12 text-xl"}`}>
+      ${isLargeCountdown ? "w-24 h-24 text-5xl" : "w-20 h-20 text-3xl"}`}>
             {timeLeft}
           </div>
         </div>
@@ -383,10 +383,10 @@ const App = () => {
 
           {/* 🔸 Palautesisältö */}
           <div
-            className={`flex flex-col items-center text-center px-4 transition-all duration-500 z-10 ${isLargeCountdown ? "max-w-4xl scale-110" : "max-w-2xl"
+            className={`flex flex-col items-center text-center px-4 transition-all duration-500 z-10 ${isLargeCountdown ? "max-w-4xl scale-110" : "max-w-3xl"
               }`}
           >
-            <div className={`${isLargeCountdown ? "w-[500px]" : "w-96"} lg:w-96`}>
+            <div className={`${isLargeCountdown ? "w-[500px]" : "w-96"} lg:w-[550px]`}>
               <img
                 loading="lazy"
                 src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3U2NWptcHI2ZXhxZm9wdnRsNWxkczNucTcwZDU5NGsxZzltZ253NiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/R59Hhh3cnfuffSSAxP/giphy.gif"
@@ -396,14 +396,14 @@ const App = () => {
             </div>
 
             <h2
-              className={`font-title mt-8 mb-4 font-heading font-bold text-orange-500 transition-opacity duration-300 ${isLargeCountdown ? "text-5xl" : "text-4xl"
+              className={`font-title mt-8 mb-4 font-heading font-bold text-orange-500 transition-opacity duration-300 ${isLargeCountdown ? "text-5xl" : "text-5xl"
                 }`}
             >
               Heräsikö kehitysehdotuksia?
             </h2>
 
             <p
-              className={`mb-6 font-body text-gray-100 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
+              className={`mb-6 font-body text-gray-100 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-3xl"
                 }`}
             >
               Skannaa QR-koodi kerro niistä meille.
@@ -413,14 +413,14 @@ const App = () => {
               <img
                 loading="lazy"
                 alt="Feedback Form QR Code"
-                className={`rounded-lg shadow-lg transition-all ${isLargeCountdown ? "h-56 w-56" : "h-40 w-40"
+                className={`rounded-lg shadow-lg transition-all ${isLargeCountdown ? "h-56 w-56" : "h-72 w-72"
                   }`}
                 src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://docs.google.com/forms/d/e/1FAIpQLSdk-MbIeGFiI_sMFYiY_1QmlV_CiIUBZeovlATbKX5mNDnv_g/viewform?usp=dialog"
               />
             </div>
 
             <p
-              className={`mt-6 font-body text-gray-200 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-xl"
+              className={`mt-6 font-body text-gray-200 transition-opacity duration-300 ${isLargeCountdown ? "text-2xl" : "text-2xl"
                 }`}
             >
               Terveisin Matias
