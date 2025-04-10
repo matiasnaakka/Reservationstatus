@@ -432,7 +432,11 @@ const App = () => {
         <div className="absolute inset-0 flex justify-center items-center bg-white transition-opacity duration-1000">
           <div className="w-[90vw] h-[90vh] flex justify-center items-center">
             <Suspense fallback={<p className="text-center text-gray-500">Loading map...</p>}>
-              <RoomMap rooms={rooms} selectedFloor={loopMode ? floorMapInLoop : selectedFloor} />
+              <RoomMap
+                rooms={rooms}
+                selectedFloor={loopMode ? floorMapInLoop : selectedFloor}
+                reservableFilter={reservableFilter} // ✅ Pass this in
+              />
             </Suspense>
           </div>
         </div>
