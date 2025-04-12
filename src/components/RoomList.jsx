@@ -120,7 +120,8 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
       style={{ scrollBehavior: "auto", maxHeight: "90vh", willChange: "transform, scroll-position", transform: "translateZ(0)", }}>
 
 
-      <div className={`grid gap-6 ${isLargeView ? "grid-cols-2" : showMap ? "grid-cols-4" : "room-grid"}`}>
+      <div className={`grid gap-6 ${isLargeView ? "grid-cols-2" : showMap ? "grid-cols-3" : "room-grid"}`}>
+
 
         {filteredRooms.map((room) => {
           const roomReserved = isRoomReserved(room);
