@@ -122,7 +122,6 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
 
       <div className={`grid gap-6 ${isLargeView ? "grid-cols-2" : showMap ? "grid-cols-3" : "room-grid"}`}>
 
-
         {filteredRooms.map((room) => {
           const roomReserved = isRoomReserved(room);
           const formattedRoomNumber = room.roomNumber.replace(/\./g, "_");
@@ -130,8 +129,8 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
 
           return (
             <div key={room.roomNumber} className={`${isLargeView ? "w-[500px] h-[400px]" : "w-[350px] h-[310px]"} p-1`}>
-              <div className={`w-full h-full room-card bg-gradient-to-br from-white via-gray-100 to-gray-100 shadow-lg rounded-2xl ring-1 ring-gray-100 flex flex-row p-3 ${isLargeView ? "shadow-2xl" : ""}
-}`}>
+              <div className={`w-full h-full room-card bg-white shadow-lg rounded-2xl border-4 border-gray-200 flex flex-row p-3 ${isLargeView ? "shadow-2xl" : ""}`}>
+
                 {/* Vasemman puolen sisältö */}
                 <div className="flex-1">
                   <h3 className={`font-title font-bold text-orange-600 ${isLargeView ? "text-3xl" : "text-2xl"}`}>
