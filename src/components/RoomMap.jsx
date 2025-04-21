@@ -3,19 +3,16 @@ import InlineSVG from "react-inlinesvg";
 import Floor7SVG from "../assets/7thfloormap.svg";
 import Floor6SVG from "../assets/6thfloormap.svg";
 import Floor5SVG from "../assets/5thfloormap.svg";
-import { isRoomReserved } from "./RoomList"; // ✅ Importoidaan oikea logiikka
+import { isRoomReserved } from "./RoomList";
 
 const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
   const svgRef = useRef(null);
   const [svgLoaded, setSvgLoaded] = useState(false);
 
-  // Function to update room colors
   const updateRoomColors = () => {
     if (!svgRef.current || !svgLoaded) return;
 
-    // ✅ Huoneet, jotka halutaan pitää aina keltaisina
     const alwaysYellowRooms = ["KMC550", "KMC590"];
-
     const filterByStaff = reservableFilter === "staff";
     const filterByStudents = reservableFilter === "students";
 
@@ -24,26 +21,30 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
       const roomElement = svgRef.current.querySelector(`#${normalizedId}`);
 
       if (roomElement) {
-        let roomColor = "#4caf50"; // Oletus: vihreä (vapaa)
+        let roomColor = "#4caf50"; // default: green
+        let stroke = "#000000";
+        let strokeWidth = "1";
+        let dashArray = "none";
 
-        // ✅ Jos huone on manuaalisesti määritelty keltaiseksi
         if (alwaysYellowRooms.includes(room.roomNumber)) {
-          roomColor = "#ffeb3b"; // Keltainen
-        }
-        // ✅ Jos huone on oikeasti varattu nyt
-        else if (isRoomReserved(room)) {
-          roomColor = "#f44336"; // Punainen
-        }
-        // ✅ Jos suodatetaan opiskelijatilat
-        else if (filterByStudents && room.reservableStudents !== "true") {
-          roomColor = "#ffeb3b"; // Keltainen, ei varattavissa opiskelijalle
-        }
-        // ✅ Jos suodatetaan henkilökunnalle
-        else if (filterByStaff && room.reservableStaff !== "true") {
-          roomColor = "#ffeb3b"; // Keltainen, ei varattavissa henkilökunnalle
+          roomColor = "#53565a"; // gray for manually set
+        } else if (isRoomReserved(room)) {
+          roomColor = "#f44336"; // red
+          dashArray = "4,2"; // dashed outline for reserved
+        } else if (filterByStudents && room.reservableStudents !== "true") {
+          roomColor = "#53565a"; // gray
+        } else if (filterByStaff && room.reservableStaff !== "true") {
+          roomColor = "#53565a"; // gray
         }
 
         roomElement.setAttribute("fill", roomColor);
+        roomElement.setAttribute("stroke", stroke);
+        roomElement.setAttribute("stroke-width", strokeWidth);
+        if (dashArray !== "none") {
+          roomElement.setAttribute("stroke-dasharray", dashArray);
+        } else {
+          roomElement.removeAttribute("stroke-dasharray");
+        }
       } else {
         console.warn(`⚠️ No SVG element found for room: ${room.roomNumber}`);
       }
@@ -56,7 +57,6 @@ const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
       return () => cancelAnimationFrame(frame);
     }
   }, [rooms, selectedFloor, svgLoaded, reservableFilter]);
-
 
   const getFloorSVG = () => {
     switch (selectedFloor) {

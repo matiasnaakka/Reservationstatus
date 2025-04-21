@@ -157,7 +157,7 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                   </p>
 
                   {!roomReserved && (
-                    <p className={`font-body flex items-center font-bold ${room.nextReservation ? "text-orange-500" : "text-green-600"} ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                    <p className={`font-body flex items-center font-bold ${room.nextReservation ? "text-orange-500" : "text-blue-700"} ${isLargeView ? "text-2xl" : "text-sm"}`}>
                       <FontAwesomeIcon icon={faClock} className={`mr-2 ${isLargeView ? "text-xl" : ""}`} />
                       {room.nextReservation
                         ? language === "fi"
@@ -172,14 +172,14 @@ const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableS
                   {/* Varausikonit */}
                   <div className="font-body flex flex-col items-start mt-3">
                     {room.reservableStaff === "true" && (
-                      <span className={`flex items-center font-semibold text-metropoliaGreen ${isLargeView ? "text-2xl" : "text-base"}`}>
-                        <FontAwesomeIcon icon={faUserTie} className={`mr-2 text-metropoliaGreen ${isLargeView ? "text-2xl" : "text-lg"}`} />
+                      <span className={`flex items-center font-semibold text-blue-800 ${isLargeView ? "text-2xl" : "text-base"}`}>
+                        <FontAwesomeIcon icon={faUserTie} className={`mr-2 text-blue-800 ${isLargeView ? "text-2xl" : "text-lg"}`} />
                         {language === "fi" ? "Henkilökunta" : "Staff"}
                       </span>
                     )}
                     {room.reservableStudents === "true" && (
-                      <span className={`flex items-center font-semibold text-metropoliaRed mt-2 ${isLargeView ? "text-2xl" : "text-sm"}`}>
-                        <FontAwesomeIcon icon={faUserGraduate} className={`mr-2 text-metropoliaRed ${isLargeView ? "text-2xl" : "text-lg"}`} />
+                      <span className={`flex items-center font-semibold text-orange-800 mt-2 ${isLargeView ? "text-2xl" : "text-sm"}`}>
+                        <FontAwesomeIcon icon={faUserGraduate} className={`mr-2 text-orange-800 ${isLargeView ? "text-2xl" : "text-lg"}`} />
                         {language === "fi" ? "Opiskelijat" : "Students"}
                       </span>
                     )}
