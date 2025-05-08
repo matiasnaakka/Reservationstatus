@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useRef, useMemo, useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import useKinectScroll from "../hooks/useKincectScroll";
@@ -62,15 +62,6 @@ export const isRoomReserved = (room) => {
   }
 
   return false; // Huone on vapaa
-};
-
-import { format, parseISO } from "date-fns";
-import { fi } from "date-fns/locale"; // Suomen kielinen muotoilu
-
-// Helper function to format closing time
-const formatClosingTime = (closingTime) => {
-  if (!closingTime) return "Unknown";
-  return format(parseISO(closingTime), "HH:mm", { locale: fi });
 };
 
 const RoomList = ({ rooms, language, autoScroll, reservableStudents, reservableStaff, showMap, isLargeView }) => {

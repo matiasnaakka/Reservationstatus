@@ -1,9 +1,51 @@
+/**
+ * RoomMap Component
+ * 
+ * This component renders an interactive SVG map of a selected floor, highlighting rooms based on their reservation status
+ * and other filters. It dynamically updates room colors and styles based on the provided data and filters.
+ * 
+ * Props:
+ * - `rooms` (Array): An array of room objects containing details such as room number and reservation status.
+ * - `selectedFloor` (string): The currently selected floor (e.g., "5", "6", "7").
+ * - `reservableFilter` (string): A filter to determine which rooms are displayed based on their reservability 
+ *   ("staff", "students", or undefined for no filter).
+ * 
+ * Features:
+ * - Dynamically updates room colors based on reservation status and filters.
+ * - Supports SVG maps for multiple floors.
+ * - Handles special cases for specific rooms with predefined styles.
+ * 
+ * Dependencies:
+ * - `react-inlinesvg`: Used to render and manipulate inline SVGs.
+ * - SVG files for each floor: `7thfloormap.svg`, `6thfloormap.svg`, `5thfloormap.svg`.
+ * - `isRoomReserved` function: Determines if a room is reserved.
+ * 
+ * Notes:
+ * - Rooms with IDs not found in the SVG will log a warning in the console.
+ * - The component ensures smooth updates using `requestAnimationFrame` for color updates.
+ * - Default room colors:
+ *   - Green (#4caf50): Available.
+ *   - Red (#f44336): Reserved.
+ *   - Gray (#53565a): Not reservable or manually set.
+ * 
+ * Example Usage:
+ * ```jsx
+ * <RoomMap
+ *   rooms={[{ roomNumber: "KMC550", reservableStaff: "true", reservableStudents: "false" }]}
+ *   selectedFloor="5"
+ *   reservableFilter="staff"
+ * />
+ * ```
+ */
 import React, { useEffect, useRef, useState } from "react";
 import InlineSVG from "react-inlinesvg";
 import Floor7SVG from "../assets/7thfloormap.svg";
 import Floor6SVG from "../assets/6thfloormap.svg";
 import Floor5SVG from "../assets/5thfloormap.svg";
 import { isRoomReserved } from "./RoomList";
+
+
+
 
 const RoomMap = ({ rooms, selectedFloor, reservableFilter }) => {
   const svgRef = useRef(null);

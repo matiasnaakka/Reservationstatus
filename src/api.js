@@ -1,3 +1,16 @@
+
+
+/**
+ * Fetches all available rooms based on the specified floor and date range.
+ *
+ * @async
+ * @function fetchAllRooms
+ * @param {number} floor - The floor number to filter rooms by.
+ * @param {string} startDate - The start date for the availability search (in ISO format).
+ * @param {string} endDate - The end date for the availability search (in ISO format).
+ * @returns {Promise<Object[]>} A promise that resolves to an array of room objects.
+ * @throws {Error} Throws an error if the API request fails.
+ */
 import axios from "axios";
 
 const API_BASE_URL = "https://opendataapi-6c68c2d89038.herokuapp.com";

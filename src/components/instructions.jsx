@@ -1,3 +1,27 @@
+/**
+ * @fileoverview Instructions component that provides detailed information
+ * about using URL parameters to control the app's behavior.
+ * 
+ * This component displays a styled informational section with a list of
+ * URL parameters and their descriptions, including examples and warnings.
+ * It is designed to help users understand how to customize the app's
+ * functionality through query parameters.
+ * 
+ * @component
+ * @example
+ * // To use the Instructions component, simply import and include it in your JSX:
+ * import Instructions from './instructions';
+ * 
+ * function App() {
+ *   return (
+ *     <div>
+ *       <Instructions />
+ *     </div>
+ *   );
+ * }
+ * 
+ * @returns {JSX.Element} A styled informational section with URL parameter details.
+ */
 import React from "react";
 
 const Instructions = () => {

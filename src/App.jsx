@@ -1,3 +1,63 @@
+/**
+ * The main application component that manages the state and logic for displaying
+ * a list of rooms, a map view, and a feedback screen. It supports features like
+ * filtering rooms, auto-scrolling, looping through screens, and multi-language support.
+ *
+ * @component
+ *
+ * @returns {JSX.Element} The rendered App component.
+ *
+ * @description
+ * - Fetches room data and reservations from an API.
+ * - Provides filtering options for floors and reservable rooms.
+ * - Supports a looping mode for displaying different screens in sequence.
+ * - Includes a feedback screen with a QR code for user suggestions.
+ * - Automatically switches between English and Finnish languages.
+ * - Handles URL parameters for state persistence and navigation.
+ *
+ * @state
+ * @property {string|null} error - Error message to display if something goes wrong.
+ * @property {string} currentScreen - The current screen being displayed (e.g., "roomList", "map", "feedbackScreen").
+ * @property {boolean} autoScroll - Whether auto-scrolling is enabled.
+ * @property {boolean} loopMode - Whether the application is in looping mode.
+ * @property {string} floorMapInLoop - The floor map to display in loop mode.
+ * @property {boolean} reservableStudents - Whether to filter rooms reservable for students.
+ * @property {boolean} reservableStaff - Whether to filter rooms reservable for staff.
+ * @property {string} selectedFloor - The currently selected floor for filtering rooms.
+ * @property {string|null} reservableFilter - The current reservable filter ("students", "staff", or null).
+ * @property {Array} rooms - The list of all fetched rooms.
+ * @property {Array} filteredRooms - The list of rooms filtered based on the current criteria.
+ * @property {boolean} loading - Whether the room data is currently being loaded.
+ * @property {boolean} showMap - Whether the map view is currently displayed.
+ * @property {boolean} showInstructions - Whether the instructions are currently displayed.
+ * @property {string} language - The current language ("en" or "fi").
+ * @property {boolean} showFullScreenMap - Whether the full-screen map is displayed in loop mode.
+ * @property {boolean} showFeedbackScreen - Whether the feedback screen is displayed in loop mode.
+ * @property {string} nextScreen - The name of the next screen in the loop sequence.
+ * @property {number} timeLeft - The time left for the current screen in loop mode.
+ * @property {Array} roomDetails - Cached details of rooms.
+ * @property {Array} roomReservations - Cached reservations for rooms.
+ * @property {boolean} isLargeCountdown - Whether the countdown timer is displayed in a large format.
+ *
+ * @effects
+ * - Fetches room data and reservations from the API.
+ * - Updates the URL parameters based on the current state.
+ * - Automatically switches between languages every 20 seconds.
+ * - Handles screen transitions in loop mode.
+ * - Updates the filtered room list when filters or data change.
+ *
+ * @dependencies
+ * - React (useState, useEffect, lazy, Suspense, useRef)
+ * - react-router-dom (useSearchParams, useNavigate)
+ * - fetchAllRooms (API function to fetch room data)
+ * - RoomList (Lazy-loaded component for displaying room cards)
+ * - RoomMap (Lazy-loaded component for displaying the map view)
+ * - Instructions (Lazy-loaded component for displaying instructions)
+ * - isRoomReserved (Utility function to check if a room is reserved)
+ *
+ * @example
+ * <App />
+ */
 import React, { useState, useEffect, lazy, Suspense, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
@@ -15,6 +75,7 @@ const getInitialScreen = () => {
 };
 
 const App = () => {
+  const [error, setError] = useState(null);
   const [currentScreen, setCurrentScreen] = useState(getInitialScreen());
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -199,6 +260,7 @@ const App = () => {
       setFilteredRooms(filteredRoomCards);
     } catch (error) {
       console.error("Error fetching rooms:", error);
+      setError("Something went wrong while loading rooms. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -219,6 +281,7 @@ const App = () => {
       setRoomReservations(updatedReservations);
     } catch (error) {
       console.error("Error fetching room reservations:", error);
+      setError("Something went wrong while loading rooms. Please try again later.");
     }
   };
 
@@ -335,6 +398,13 @@ const App = () => {
     const newFloorMap = searchParams.get("floorMap");
     if (newFloorMap) setFloorMapInLoop(newFloorMap);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   return (
 
@@ -498,7 +568,11 @@ const App = () => {
               </h2>
             )}
           </header>
-
+          {error && (
+            <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded shadow text-center">
+              {error}
+            </div>
+          )}
           {/* ✅ Conditionally render Instructions with Lazy Loading */}
           {showInstructions && (
             <Suspense fallback={<p className="text-center text-gray-500">Loading instructions...</p>}>
